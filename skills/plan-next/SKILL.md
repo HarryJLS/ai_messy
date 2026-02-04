@@ -30,6 +30,10 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 | "项目里没找到使用示例，我自己理解就行" | 没找到说明搜索不充分，必须继续搜索或询问用户 |
 | "注释太繁琐了，代码本身就很清楚" | 代码清楚 ≠ 意图清楚，注释是为了说明业务意图 |
 | "这种简单的跳转不需要注释" | 所有方法跳转都需要注释，为后续维护者考虑 |
+| "接口方法签名已经很清楚了，不需要注释" | 签名说明"是什么"，注释说明"为什么"和"怎么用" |
+| "实现类直接继承接口注释就行" | 实现类需要补充具体实现策略和特殊逻辑说明 |
+| "私有方法是内部的，不需要那么详细的注释" | 私有方法同样需要注释，说明抽取原因和调用时机 |
+| "调用行注释会让代码太长" | 可读性比简洁更重要，必要时换行 |
 | "我确信这个实现方式是对的，不需要问用户" | 确信 ≠ 正确，涉及架构的决策必须征得用户同意 |
 | "询问用户太频繁，会打断流程" | 错误的假设比询问的成本更高 |
 | "我可以稍后补充注释" | 稍后 = 永远不会，必须在写代码时同步写注释 |
@@ -286,42 +290,246 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 
 ### 5.2: 代码注释规范要求
 
-**方法注释要求**：
-- 每个新写的方法**必须**包含完整的方法注释
-- 注释格式：功能说明、参数说明、返回值说明、异常说明
-- 使用项目统一的注释风格（JavaDoc、GoDoc等）
-- 注释模板：
+⚠️ **核心原则**：代码不仅要能运行，还要能让人快速理解。注释是给后续维护者的导航地图。
+
+#### 5.2.1: 接口与实现类注释（必须）
+
+**接口注释要求**：
+- 接口**必须**有类级别的 doc 注释，说明接口的职责和使用场景
+- 接口中的每个方法**必须**有完整的方法注释
+
 ```java
 /**
- * 功能描述，说明此方法的业务用途和核心逻辑
+ * 订单金额计算服务接口
  *
- * @param paramName 参数说明，包括类型、范围、特殊值处理
- * @return 返回值说明，包括成功/失败情况下的不同返回值
- * @throws ExceptionType 异常说明，说明什么情况下抛出此异常
+ * <p>负责订单相关的金额计算，包括：
+ * <ul>
+ *   <li>基础金额计算</li>
+ *   <li>折扣优惠计算</li>
+ *   <li>运费计算</li>
+ * </ul>
+ *
+ * @author xxx
+ * @since 1.0.0
  */
+public interface OrderCalculationService {
+
+    /**
+     * 计算订单总金额
+     *
+     * @param order 订单对象，不能为空
+     * @return 订单总金额，单位：元
+     * @throws IllegalArgumentException 当订单为空或订单项为空时
+     */
+    BigDecimal calculateTotalAmount(Order order);
+}
 ```
 
 ```go
-// FunctionName 功能描述，说明此方法的业务用途和核心逻辑
-// 参数说明：paramName - 参数用途和约束
-// 返回值：成功时返回什么，失败时返回什么
-// 异常：什么情况下会返回error
+// OrderCalculationService 订单金额计算服务接口
+// 负责订单相关的金额计算，包括基础金额、折扣优惠、运费等
+type OrderCalculationService interface {
+    // CalculateTotalAmount 计算订单总金额
+    // 参数：order - 订单对象，不能为 nil
+    // 返回：订单总金额（单位：元），error 为空表示成功
+    CalculateTotalAmount(ctx context.Context, order *Order) (decimal.Decimal, error)
+}
 ```
 
-**方法跳转注释要求**：
-- 每个方法跳转行**必须**添加注释说明跳转方法的功能
-- 注释格式：`// 禁用逻辑处理`
-- 确保跳转逻辑清晰易懂
-- 跳转注释示例：
+**实现类注释要求**：
+- 实现类**必须**有类级别注释，说明具体实现策略
+- 实现类的方法注释与接口保持一致
+
 ```java
-return orderService.calculateAmount(order); // 跳转到订单服务计算金额逻辑
+/**
+ * 订单金额计算服务默认实现
+ *
+ * <p>实现策略：
+ * <ul>
+ *   <li>先计算商品原价总和</li>
+ *   <li>应用折扣规则（满减 > 优惠券 > 会员折扣）</li>
+ *   <li>最后加上运费</li>
+ * </ul>
+ *
+ * @author xxx
+ * @since 1.0.0
+ */
+@Service
+public class OrderCalculationServiceImpl implements OrderCalculationService {
+
+    /**
+     * 计算订单总金额
+     *
+     * @param order 订单对象，不能为空
+     * @return 订单总金额，单位：元
+     * @throws IllegalArgumentException 当订单为空或订单项为空时
+     */
+    @Override
+    public BigDecimal calculateTotalAmount(Order order) {
+        // 实现代码
+    }
+}
 ```
 
 ```go
-result, err := userService.ValidateUser(ctx, userID) // 跳转到用户服务验证用户有效性
+// OrderCalculationServiceImpl 订单金额计算服务默认实现
+// 实现策略：先计算商品原价 -> 应用折扣规则 -> 加上运费
+type OrderCalculationServiceImpl struct {
+    discountService DiscountService
+    shippingService ShippingService
+}
+
+// CalculateTotalAmount 计算订单总金额
+// 实现说明：采用分步计算策略，便于后续扩展折扣规则
+func (s *OrderCalculationServiceImpl) CalculateTotalAmount(ctx context.Context, order *Order) (decimal.Decimal, error) {
+    // 实现代码
+}
 ```
 
-**关键逻辑注释**：
+#### 5.2.2: 方法注释要求（必须）
+
+**公开方法（public）**：
+- **必须**有完整的方法注释
+- 注释格式：功能说明、参数说明、返回值说明、异常说明
+- 使用项目统一的注释风格（JavaDoc、GoDoc等）
+
+```java
+/**
+ * 根据用户ID查询用户详情
+ *
+ * @param userId 用户ID，必须大于0
+ * @return 用户详情DTO，用户不存在时返回null
+ * @throws IllegalArgumentException 当userId小于等于0时
+ */
+public UserDTO getUserById(Long userId) {
+    // 实现代码
+}
+```
+
+```go
+// GetUserByID 根据用户ID查询用户详情
+// 参数：userId - 用户ID，必须大于0
+// 返回：用户详情，用户不存在时返回nil；error为空表示成功
+func (s *UserService) GetUserByID(ctx context.Context, userID int64) (*UserDTO, error) {
+    // 实现代码
+}
+```
+
+**私有方法/子方法**：
+- **必须**有方法注释，说明此子方法的具体职责
+- 注释需说明：做什么、为什么抽取为独立方法、调用时机
+
+```java
+/**
+ * 应用折扣规则到订单金额
+ *
+ * @param baseAmount 商品原价总额
+ * @param discounts 适用的折扣列表，按优先级排序
+ * @return 折扣后的金额
+ */
+private BigDecimal applyDiscounts(BigDecimal baseAmount, List<Discount> discounts) {
+    // 实现代码
+}
+```
+
+```go
+// applyDiscounts 应用折扣规则到订单金额
+// 参数：baseAmount - 商品原价总额，discounts - 适用的折扣列表
+// 返回：折扣后的金额
+func (s *OrderCalculationServiceImpl) applyDiscounts(baseAmount decimal.Decimal, discounts []*Discount) decimal.Decimal {
+    // 实现代码
+}
+```
+
+#### 5.2.3: 方法调用行注释（必须）
+
+**核心要求**：调用其他方法时，**必须**在调用行添加注释，说明调用目的，让阅读者无需跳转即可理解。
+
+**注释格式**：`// [动作]: [目的/结果]`
+
+**Java 示例**：
+```java
+public OrderDTO createOrder(CreateOrderRequest request) {
+    // 1. 参数校验: 校验订单请求参数完整性
+    validateOrderRequest(request);
+
+    // 2. 查询商品: 获取订单中所有商品的详细信息
+    List<Product> products = productService.getProductsByIds(request.getProductIds());
+
+    // 3. 库存检查: 确认所有商品库存充足
+    inventoryService.checkStock(products, request.getQuantities());
+
+    // 4. 计算金额: 根据商品和优惠信息计算订单总金额
+    BigDecimal totalAmount = orderCalculationService.calculateTotalAmount(products, request.getCoupons());
+
+    // 5. 创建订单: 生成订单记录并保存到数据库
+    Order order = orderRepository.save(buildOrder(request, products, totalAmount));
+
+    // 6. 扣减库存: 锁定商品库存防止超卖
+    inventoryService.deductStock(products, request.getQuantities());
+
+    // 7. 发送通知: 异步通知用户订单创建成功
+    notificationService.sendOrderCreatedNotification(order);
+
+    return OrderConverter.toDTO(order);
+}
+```
+
+**Go 示例**：
+```go
+func (s *OrderService) CreateOrder(ctx context.Context, req *CreateOrderRequest) (*OrderDTO, error) {
+    // 1. 参数校验: 校验订单请求参数完整性
+    if err := s.validateOrderRequest(req); err != nil {
+        return nil, err
+    }
+
+    // 2. 查询商品: 获取订单中所有商品的详细信息
+    products, err := s.productService.GetProductsByIDs(ctx, req.ProductIDs)
+    if err != nil {
+        return nil, fmt.Errorf("查询商品失败: %w", err)
+    }
+
+    // 3. 库存检查: 确认所有商品库存充足
+    if err := s.inventoryService.CheckStock(ctx, products, req.Quantities); err != nil {
+        return nil, fmt.Errorf("库存检查失败: %w", err)
+    }
+
+    // 4. 计算金额: 根据商品和优惠信息计算订单总金额
+    totalAmount, err := s.calculationService.CalculateTotalAmount(ctx, products, req.Coupons)
+    if err != nil {
+        return nil, fmt.Errorf("计算金额失败: %w", err)
+    }
+
+    // 5. 创建订单: 生成订单记录并保存到数据库
+    order, err := s.orderRepo.Save(ctx, s.buildOrder(req, products, totalAmount))
+    if err != nil {
+        return nil, fmt.Errorf("保存订单失败: %w", err)
+    }
+
+    // 6. 扣减库存: 锁定商品库存防止超卖
+    if err := s.inventoryService.DeductStock(ctx, products, req.Quantities); err != nil {
+        return nil, fmt.Errorf("扣减库存失败: %w", err)
+    }
+
+    // 7. 发送通知: 异步通知用户订单创建成功（失败不影响主流程）
+    go s.notificationService.SendOrderCreatedNotification(ctx, order)
+
+    return convertToDTO(order), nil
+}
+```
+
+**链式调用注释**：
+```java
+// 构建用户查询条件: 按部门筛选 + 只查激活用户 + 按创建时间倒序分页
+List<User> users = userRepository.findAll(
+    Specification.where(UserSpec.byDepartment(deptId))
+        .and(UserSpec.isActive()),
+    PageRequest.of(page, size, Sort.by("createdAt").descending())
+);
+```
+
+#### 5.2.4: 关键逻辑注释
+
 - 复杂业务逻辑添加解释性注释
 - 算法实现添加步骤说明注释
 - 重要的判断条件添加原因说明

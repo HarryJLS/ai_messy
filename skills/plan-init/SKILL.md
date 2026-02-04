@@ -191,10 +191,46 @@ description: 初始化 Agent 框架，创建 features.json 状态文件和 logs/
 
 7. **向用户展示任务列表** 并请求确认
    - 如有 `references` 或 `dataSamples`，需在展示时标注，确保用户确认这些资源已正确记录
-8. ⛔ **等待用户确认** 后再写入 features.json
-9. **追加任务分解日志到 `logs/init.log`**
 
-### 步骤 4: 最终总结
+8. ⛔ **门控: 等待用户确认**
+
+9. **用户确认后，立即写入 features.json**
+
+   ⚠️ **关键**: 用户确认后，**必须立即**将任务列表写入 `features.json`，不得跳过此步骤。
+
+   ```json
+   // features.json 内容示例
+   [
+     {
+       "id": "1",
+       "category": "core",
+       "description": "任务描述",
+       "steps": ["步骤1", "步骤2"],
+       "acceptance": ["验收标准1"],
+       "test": "unit: 测试方法",
+       "passes": false
+     }
+   ]
+   ```
+
+10. **追加任务分解日志到 `logs/init.log`**
+    ```
+    [ISO 时间戳] [Init] 任务分解完成
+    ├─ Context: 用户确认任务列表
+    ├─ Tasks: [列出所有任务 ID 和简述]
+    ├─ Files: features.json（已写入 N 个任务）
+    └─ Result: 任务已持久化，等待执行
+    ---
+    ```
+
+11. ⛔ **门控: 写入完成后停止**
+
+    写入 `features.json` 后，**必须停止并等待用户下一个命令**。
+
+    ❌ **禁止**: 自动开始执行任务
+    ❌ **禁止**: 自动调用 /plan-next
+
+### 步骤 4: 最终总结（写入 features.json 后执行）
 
 追加最终初始化总结到 `logs/init.log`:
 ```
@@ -214,9 +250,9 @@ description: 初始化 Agent 框架，创建 features.json 状态文件和 logs/
 ✅ 初始化完成！
 
 已创建:
-• features.json - [N] 个任务就绪（全部 passes: false）
+• features.json - [N] 个任务已写入（全部 passes: false）
 • logs/ - 任务隔离日志目录
-• logs/init.log - [3] 条初始化日志已记录
+• logs/init.log - 初始化日志已记录
 
 日志架构:
 → 每个任务将获得 logs/task-{id}.log，包含5个详细阶段日志
@@ -227,4 +263,17 @@ description: 初始化 Agent 框架，创建 features.json 状态文件和 logs/
 • 运行 /plan-next 开始第一个任务
 ```
 
-⚠️ **告知用户后，停止并等待下一个命令。**
+⚠️ **输出后立即停止，等待用户下一个命令。**
+
+## 后续修改同步
+
+如果用户在初始化后要求修改任务（增删改），必须同步更新 `features.json`：
+
+| 操作 | 处理方式 |
+|------|----------|
+| 新增任务 | 添加到 `features.json` 数组末尾，分配新 ID |
+| 修改任务 | 更新 `features.json` 中对应任务的字段 |
+| 删除任务 | 从 `features.json` 中移除对应任务 |
+| 重排顺序 | 更新 `features.json` 中任务的顺序和 ID |
+
+⚠️ **关键原则**: `features.json` 是任务的单一事实来源，任何修改必须立即同步到文件。
