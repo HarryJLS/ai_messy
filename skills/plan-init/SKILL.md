@@ -1,6 +1,6 @@
 ---
 name: plan-init
-description: 初始化 Agent 框架，创建 features.json 状态文件和 logs/ 日志目录。当用户说 "/plan-init"、"初始化项目"、"开始新项目"、"创建任务列表"、"设置 Agent" 时触发。用于启动新的结构化开发工作流。
+description: 初始化 Agent 框架，创建 features.json 状态文件和 logs/ 日志目录。当用户说 "/plan-init"、"初始化项目"、"开始新项目"、"创建任务列表"、"设置 Agent"、"初始化任务" 时触发。用于启动新的结构化开发工作流。
 ---
 
 # Plan Init
@@ -27,6 +27,17 @@ description: 初始化 Agent 框架，创建 features.json 状态文件和 logs/
 
 ## 协议
 
+### 步骤 0: 进入 Plan Mode
+
+skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
+
+在 plan mode 中完成步骤 1-3 的所有探索、分析和任务分解工作。当任务列表确认后，调用 `ExitPlanMode` 提交计划供用户审批。
+
+**Plan mode 的价值**：
+- 在写入任何文件前，先充分探索代码库和理解需求
+- 用户可以在计划阶段审核和调整，避免无效执行
+- 所有文件创建和写入操作在 plan mode 退出后执行
+
 ### 步骤 1: 检查现有文件
 
 检查项目根目录的 `features.json` 和 `logs/` 目录。
@@ -44,42 +55,13 @@ description: 初始化 Agent 框架，创建 features.json 状态文件和 logs/
 
 ⛔ **门控**: 在用户选择选项前不得继续
 
-### 步骤 2: 创建文件
+### 步骤 2: 规划文件创建（仅规划，不执行写入）
 
-1. **创建 `features.json`**: `[]`（空数组）
+确认需要创建的文件清单（实际写入在步骤 4 执行）：
 
-2. **创建 `logs/` 目录**: `mkdir -p logs`
-
-3. **创建 `logs/init.log`** 并写入头部:
-```
-=== Agent 初始化日志 ===
-初始化时间: [时间戳]
-格式: 增强结构化格式
-
-日志类型参考:
-- [Init] - 框架初始化
-- [Explore] - 代码库探索
-- [Pending] - 任务规划
-- [TDD-Red] - 红灯确认
-- [TDD-Green] - 绿灯验证
-- [Completed] - 任务完成
-- [Fix/Refactor/Optimization/Design/Test/Docs/Config] - 手动日志
-
-每个任务有独立日志文件: logs/task-{id}.log
----
-```
-
-4. **追加初始日志条目到 `logs/init.log`**:
-```
-[ISO 时间戳] [Init] Agent 框架设置
-├─ Context: 用户初始化 Agent 进行结构化开发工作流
-├─ Files: features.json（已创建）| logs/（目录已创建）| logs/init.log（本文件）
-├─ Changes: 设置任务隔离日志架构
-├─ Tech: JSON 用于任务存储 | 独立日志文件提升 token 效率
-├─ Decision: 任务级日志隔离 → 更好的 token 管理，更易恢复上下文
-└─ Result: 框架准备就绪，可定义项目目标和任务分解
----
-```
+1. `features.json` — 空数组 `[]`
+2. `logs/` 目录
+3. `logs/init.log` — 初始化日志头部 + 框架设置日志条目
 
 ### 步骤 3: 获取项目目标
 
@@ -189,17 +171,56 @@ description: 初始化 Agent 框架，创建 features.json 状态文件和 logs/
 }
 ```
 
-7. **向用户展示任务列表** 并请求确认
-   - 如有 `references` 或 `dataSamples`，需在展示时标注，确保用户确认这些资源已正确记录
+7. **将任务列表写入计划文件并退出 Plan Mode**
+   - 如有 `references` 或 `dataSamples`，需在计划中标注
+   - 将完整的任务列表、步骤 1 的文件检查结果、步骤 2 的文件创建计划，一并写入计划文件
+   - 调用 `ExitPlanMode` 提交计划供用户审批
 
-8. ⛔ **门控: 等待用户确认**
+8. ⛔ **门控: 等待用户审批计划**
 
-9. **用户确认后，立即写入 features.json**
+### 步骤 4: 执行计划（用户审批后自动进入）
 
-   ⚠️ **关键**: 用户确认后，**必须立即**将任务列表写入 `features.json`，不得跳过此步骤。
+用户审批计划后，按计划执行以下操作：
+
+1. **创建框架文件**
+
+   - 创建 `features.json`: `[]`（空数组）
+   - 创建 `logs/` 目录: `mkdir -p logs`
+   - 创建 `logs/init.log` 并写入头部:
+     ```
+     === Agent 初始化日志 ===
+     初始化时间: [时间戳]
+     格式: 增强结构化格式
+
+     日志类型参考:
+     - [Init] - 框架初始化
+     - [Explore] - 代码库探索
+     - [Pending] - 任务规划
+     - [TDD-Red] - 红灯确认
+     - [TDD-Green] - 绿灯验证
+     - [Completed] - 任务完成
+     - [Fix/Refactor/Optimization/Design/Test/Docs/Config] - 手动日志
+
+     每个任务有独立日志文件: logs/task-{id}.log
+     ---
+     ```
+   - 追加框架设置日志条目到 `logs/init.log`:
+     ```
+     [ISO 时间戳] [Init] Agent 框架设置
+     ├─ Context: 用户初始化 Agent 进行结构化开发工作流
+     ├─ Files: features.json（已创建）| logs/（目录已创建）| logs/init.log（本文件）
+     ├─ Changes: 设置任务隔离日志架构
+     ├─ Tech: JSON 用于任务存储 | 独立日志文件提升 token 效率
+     ├─ Decision: 任务级日志隔离 → 更好的 token 管理，更易恢复上下文
+     └─ Result: 框架准备就绪，可定义项目目标和任务分解
+     ---
+     ```
+
+2. **写入 features.json**
+
+   ⚠️ **关键**: **必须**将任务列表写入 `features.json`，不得跳过。
 
    ```json
-   // features.json 内容示例
    [
      {
        "id": "1",
@@ -213,7 +234,7 @@ description: 初始化 Agent 框架，创建 features.json 状态文件和 logs/
    ]
    ```
 
-10. **追加任务分解日志到 `logs/init.log`**
+3. **追加任务分解日志到 `logs/init.log`**
     ```
     [ISO 时间戳] [Init] 任务分解完成
     ├─ Context: 用户确认任务列表
@@ -223,26 +244,22 @@ description: 初始化 Agent 框架，创建 features.json 状态文件和 logs/
     ---
     ```
 
-11. ⛔ **门控: 写入完成后停止**
+4. **追加最终初始化总结到 `logs/init.log`**:
+    ```
+    [ISO 时间戳] [Init] 初始化完成 - 准备执行
+    ├─ Context: 框架设置完成，所有状态文件已创建
+    ├─ Files: features.json（N 个任务）| logs/init.log（3 条日志）| logs/ 目录就绪
+    ├─ Changes: 完成初始化 - 任务已定义，日志框架已设置
+    ├─ Tech: 任务隔离日志架构 | 基于 JSON 的任务管理
+    ├─ Decision: 所有任务初始 passes:false → 需验证后才能标记完成
+    └─ Result: 系统准备好执行 /plan-next | 所有 N 个任务待处理
+    ---
+    ```
 
-    写入 `features.json` 后，**必须停止并等待用户下一个命令**。
+5. ⛔ **写入完成后停止**
 
     ❌ **禁止**: 自动开始执行任务
     ❌ **禁止**: 自动调用 /plan-next
-
-### 步骤 4: 最终总结（写入 features.json 后执行）
-
-追加最终初始化总结到 `logs/init.log`:
-```
-[ISO 时间戳] [Init] 初始化完成 - 准备执行
-├─ Context: 框架设置完成，所有状态文件已创建
-├─ Files: features.json（N 个任务）| logs/init.log（3 条日志）| logs/ 目录就绪
-├─ Changes: 完成初始化 - 任务已定义，日志框架已设置
-├─ Tech: 任务隔离日志架构 | 基于 JSON 的任务管理
-├─ Decision: 所有任务初始 passes:false → 需验证后才能标记完成
-└─ Result: 系统准备好执行 /plan-next | 所有 N 个任务待处理
----
-```
 
 ## 完成后输出
 
