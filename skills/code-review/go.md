@@ -307,6 +307,173 @@ grep -rE "sync\.Mutex" --include="*.go" -A 10 | grep -E "\+\+|--|\+="
 
 ---
 
+### WaitGroup.Add 位置不当
+
+**搜索模式**: `grep -rE "go\s+func" --include="*.go" -A 3 | grep "wg\.Add"`
+**通过标准**: wg.Add() 必须在 go func 之前调用，禁止在 goroutine 内部调用
+**严重级别**: High
+
+```go
+// 不推荐：goroutine 内 Add，可能 Wait 先于 Add 执行
+for _, item := range items {
+    go func(it Item) {
+        wg.Add(1)  // 错误位置
+        defer wg.Done()
+        process(it)
+    }(item)
+}
+
+// 推荐
+for _, item := range items {
+    wg.Add(1)
+    go func(it Item) {
+        defer wg.Done()
+        process(it)
+    }(item)
+}
+```
+
+---
+
+### goroutine 闭包变量捕获
+
+**搜索模式**: `grep -rE "for\s+.*:=\s*range" --include="*.go" -A 5 | grep "go\s+func"`（Go < 1.22）
+**通过标准**: for 循环中启动 goroutine 必须通过参数传递循环变量
+**严重级别**: High
+
+```go
+// 不推荐（Go < 1.22）
+for _, item := range items {
+    go func() {
+        process(item)  // item 始终是最后一个值
+    }()
+}
+
+// 推荐
+for _, item := range items {
+    item := item  // 或通过参数传递
+    go func() {
+        process(item)
+    }()
+}
+```
+
+---
+
+### map 并发读写
+
+**搜索模式**: `grep -rE "map\[" --include="*.go"` 结合上下文检查是否被多 goroutine 访问
+**通过标准**: 多 goroutine 读写 map 必须用 sync.Map 或 mutex 保护
+**严重级别**: Critical
+
+---
+
+### Context 取消未检查
+
+**搜索模式**: `grep -rE "go\s+func" --include="*.go" -A 20 | grep -v "ctx\.Done\|ctx\.Err\|select"`
+**通过标准**: 长时间运行的 goroutine 必须检查 ctx.Done()
+**严重级别**: Medium
+
+```go
+// 不推荐
+go func() {
+    for {
+        doWork()  // 永远不会退出
+    }
+}()
+
+// 推荐
+go func() {
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        default:
+            doWork()
+        }
+    }
+}()
+```
+
+---
+
+### sync.Once 中的 panic
+
+**搜索模式**: `grep -rE "sync\.Once" --include="*.go" -A 5 | grep -v "recover"`
+**通过标准**: 注意 sync.Once.Do 中 panic 后，后续调用不会重试执行
+**严重级别**: Medium
+
+---
+
+### errgroup 错误处理
+
+**搜索模式**: `grep -rE "errgroup" --include="*.go" -l | xargs grep -L "\.Wait()"` 或 `Wait() 返回值未检查`
+**通过标准**: errgroup.Wait() 返回的 error 必须检查
+**严重级别**: Medium
+
+---
+
+### 无缓冲 channel 死锁
+
+**搜索模式**: `grep -rE "make\(chan\s+\w+\s*\)" --include="*.go"` 检查同一函数内发送和接收
+**通过标准**: 无缓冲 channel 的发送和接收不能在同一 goroutine
+**严重级别**: High
+
+---
+
+### 共享 slice append
+
+**搜索模式**: 多 goroutine 对同一 slice 使用 append
+**通过标准**: 并发 append 到同一 slice 不安全，需 mutex 保护或使用 channel 收集
+**严重级别**: High
+
+---
+
+### time.After 循环泄漏
+
+**搜索模式**: `grep -rE "for\s*\{" --include="*.go" -A 10 | grep "time\.After"`
+**通过标准**: for-select 循环中禁止使用 time.After（每次创建新 timer），改用 time.NewTimer + Reset
+**严重级别**: Medium
+
+```go
+// 不推荐：每次循环创建新 timer，旧 timer 不会被 GC 直到触发
+for {
+    select {
+    case <-ch:
+        handle()
+    case <-time.After(5 * time.Second):  // 泄漏
+        timeout()
+    }
+}
+
+// 推荐
+timer := time.NewTimer(5 * time.Second)
+defer timer.Stop()
+for {
+    select {
+    case <-ch:
+        handle()
+        if !timer.Stop() {
+            <-timer.C
+        }
+        timer.Reset(5 * time.Second)
+    case <-timer.C:
+        timeout()
+        timer.Reset(5 * time.Second)
+    }
+}
+```
+
+---
+
+### mutex 拷贝
+
+**搜索模式**: `go vet` 可检测，或 `grep -rE "func\s+\(\w+\s+\w+\)" --include="*.go"` 值接收者包含 mutex
+**通过标准**: 包含 sync.Mutex/sync.WaitGroup 的结构体禁止值拷贝，使用指针接收者
+**严重级别**: Critical
+
+---
+
 ## Category: 性能优化
 
 ### slice 预分配

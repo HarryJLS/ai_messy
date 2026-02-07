@@ -98,6 +98,61 @@ String result = someService.processData(param1, param2,
     param3, param4, param5);
 ```
 
+### 9. ThreadLocal 清理
+
+**检测**: ThreadLocal.set() 后无 finally { remove() }
+**修复**: 包裹 try-finally 并添加 remove()
+
+```java
+// 检测
+threadLocal.set(value);
+doSomething();
+
+// 修复
+threadLocal.set(value);
+try {
+    doSomething();
+} finally {
+    threadLocal.remove();
+}
+```
+
+### 10. ReentrantLock finally 释放
+
+**检测**: lock() 后未在 try-finally 中 unlock()
+**修复**: 包裹 try-finally { unlock() }
+
+```java
+// 检测
+lock.lock();
+doSomething();
+lock.unlock();
+
+// 修复
+lock.lock();
+try {
+    doSomething();
+} finally {
+    lock.unlock();
+}
+```
+
+### 11. CompletableFuture 异常处理
+
+**检测**: CompletableFuture 链无 exceptionally/handle
+**修复**: 链尾追加 `.exceptionally(e -> { log.error("...", e); return null; })`
+
+```java
+// 检测
+CompletableFuture.supplyAsync(() -> fetchData())
+    .thenApply(data -> process(data));
+
+// 修复
+CompletableFuture.supplyAsync(() -> fetchData())
+    .thenApply(data -> process(data))
+    .exceptionally(e -> { log.error("Async operation failed", e); return null; });
+```
+
 ---
 
 ## CONFIRM 修复项
@@ -135,6 +190,21 @@ if (status == STATUS_COMPLETED) { ... }
 
 **检测**: 重复代码块
 **建议**: 抽取为独立方法
+
+### 6. HashMap → ConcurrentHashMap
+
+**检测**: 多线程场景使用 HashMap
+**建议**: 改用 ConcurrentHashMap（需确认使用场景）
+
+### 7. synchronized 范围缩小
+
+**检测**: 整个方法加 synchronized
+**建议**: 缩小到最小临界区（需确认业务边界）
+
+### 8. Spring Bean 可变状态
+
+**检测**: 单例 Bean 含非 final 可变成员
+**建议**: 改为 ConcurrentHashMap / ThreadLocal / 无状态设计
 
 ---
 

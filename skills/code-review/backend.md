@@ -319,6 +319,80 @@ grep -rE "session\.(get|post)\(" --include="*.py" | grep -v "timeout="
 
 ---
 
+### asyncio.gather 异常处理
+
+**搜索模式**: `grep -rE "asyncio\.gather\(" --include="*.py" | grep -v "return_exceptions"`
+**通过标准**: gather 需显式处理异常（return_exceptions=True 或 try/except 包裹每个 coroutine）
+**严重级别**: High
+
+---
+
+### 全局可变状态
+
+**搜索模式**: `grep -rE "^[a-zA-Z_]+\s*:\s*(dict|list|set|Dict|List|Set)\s*=" --include="*.py"` 或 `grep -rE "^[a-zA-Z_]+\s*=\s*(\{|\[)" --include="*.py"`
+**通过标准**: ASGI 应用中禁止模块级可变变量在并发请求间共享（使用 contextvars 或依赖注入）
+**严重级别**: Critical
+
+```python
+# 不推荐：模块级可变状态，多个请求并发修改
+_cache: dict = {}
+
+@app.get("/data")
+async def get_data(key: str):
+    if key not in _cache:
+        _cache[key] = await fetch_data(key)  # 竞态条件
+    return _cache[key]
+
+# 推荐：使用依赖注入 + 线程安全容器
+from cachetools import TTLCache
+from asyncio import Lock
+
+class CacheService:
+    def __init__(self):
+        self._cache = TTLCache(maxsize=100, ttl=300)
+        self._lock = Lock()
+
+    async def get(self, key: str):
+        async with self._lock:
+            if key not in self._cache:
+                self._cache[key] = await fetch_data(key)
+            return self._cache[key]
+```
+
+---
+
+### 数据库连接池耗尽
+
+**搜索模式**: `grep -rE "async_session\(|AsyncSession\(" --include="*.py" | grep -v "async with"`
+**通过标准**: 数据库 session 必须使用 `async with` 确保归还连接池
+**严重级别**: High
+
+---
+
+### asyncio.Lock 缺失
+
+**搜索模式**: 检查异步函数中对共享资源的读写是否有 asyncio.Lock 保护
+**通过标准**: 异步环境中保护共享可变资源需使用 asyncio.Lock
+**严重级别**: Medium
+
+---
+
+### 异步生成器未清理
+
+**搜索模式**: `grep -rE "async\s+def\s+\w+.*->.*AsyncGenerator|async\s+for" --include="*.py"`
+**通过标准**: async generator 使用完毕需 aclose() 或通过 async with 清理
+**严重级别**: Medium
+
+---
+
+### 并发写同一资源
+
+**搜索模式**: 多个 async 函数写同一文件/缓存/共享变量
+**通过标准**: 并发写操作需加 asyncio.Lock 或 asyncio.Semaphore
+**严重级别**: High
+
+---
+
 ## Category: Error Handling (Backend)
 
 ### Generic Exception Catches

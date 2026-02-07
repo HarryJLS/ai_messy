@@ -95,6 +95,44 @@ const data: any = response;
 **检测**: useEffect 中直接 fetch
 **建议**: 改用 React Query
 
+### 5. useEffect 竞态条件修复
+
+**检测**: async useEffect 无 cleanup
+**建议**: 添加 cancelled flag 或 AbortController
+
+```tsx
+// 检测
+useEffect(() => {
+    fetchData(id).then(setData);
+}, [id]);
+
+// 建议修复
+useEffect(() => {
+    let cancelled = false;
+    fetchData(id).then(data => {
+        if (!cancelled) setData(data);
+    });
+    return () => { cancelled = true; };
+}, [id]);
+```
+
+### 6. 闭包陈旧状态修复
+
+**检测**: setTimeout/setInterval 中直接使用 state 值
+**建议**: 改用函数式更新 `setState(prev => ...)` 或 useRef
+
+```tsx
+// 检测
+setInterval(() => {
+    setCount(count + 1);
+}, 1000);
+
+// 建议修复
+setInterval(() => {
+    setCount(prev => prev + 1);
+}, 1000);
+```
+
 ---
 
 ## SKIP 项 (禁止修改)

@@ -85,6 +85,34 @@ def process(data: str) -> str:
     return data.strip()
 ```
 
+### 7. asyncio.gather 异常处理
+
+**检测**: `asyncio.gather(...)` 无 `return_exceptions=True`
+**修复**: 添加 `return_exceptions=True`
+
+```python
+# 检测
+results = await asyncio.gather(task1(), task2())
+
+# 修复
+results = await asyncio.gather(task1(), task2(), return_exceptions=True)
+```
+
+### 8. async session 上下文管理
+
+**检测**: `session = async_session()` 未用 `async with`
+**修复**: 改用 `async with async_session() as session:`
+
+```python
+# 检测
+session = async_session()
+result = await session.execute(query)
+
+# 修复
+async with async_session() as session:
+    result = await session.execute(query)
+```
+
 ---
 
 ## CONFIRM 修复项
@@ -125,6 +153,11 @@ def get_users(service: UserService = Depends(get_user_service)):
 
 **检测**: 重复代码块
 **建议**: 抽取为独立函数
+
+### 6. 全局可变状态重构
+
+**检测**: 模块级 dict/list 被请求处理函数修改
+**建议**: 改用依赖注入 + asyncio.Lock，或使用 contextvars
 
 ---
 

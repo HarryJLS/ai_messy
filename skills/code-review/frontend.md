@@ -9,6 +9,7 @@ Add these categories to the summary table:
 - React Query
 - Tailwind CSS
 - Performance (React)
+- 并发与竞态条件 (React)
 
 ---
 
@@ -659,3 +660,79 @@ grep -rE "isError|error\s*\?" --include="*.tsx"
 
 **Pass criteria**: Error conditions are handled and displayed
 **Severity**: Medium
+
+---
+
+## Category: 并发与竞态条件 (React)
+
+### useEffect 竞态条件
+
+**搜索模式**: `grep -rE "useEffect.*async|useEffect.*fetch\(|useEffect.*await" --include="*.tsx"`
+**通过标准**: 异步 useEffect 必须使用 cleanup flag 或 AbortController 取消过期请求
+**严重级别**: High
+
+```tsx
+// 不推荐：快速切换时旧请求覆盖新结果
+useEffect(() => {
+    fetchData(id).then(setData);
+}, [id]);
+
+// 推荐方案1：cleanup flag
+useEffect(() => {
+    let cancelled = false;
+    fetchData(id).then(data => {
+        if (!cancelled) setData(data);
+    });
+    return () => { cancelled = true; };
+}, [id]);
+
+// 推荐方案2：AbortController
+useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/data/${id}`, { signal: controller.signal })
+        .then(res => res.json())
+        .then(setData)
+        .catch(err => {
+            if (err.name !== 'AbortError') throw err;
+        });
+    return () => controller.abort();
+}, [id]);
+```
+
+---
+
+### 闭包陈旧状态 (Stale Closure)
+
+**搜索模式**: `grep -rE "setTimeout|setInterval|addEventListener" --include="*.tsx" -A 5 | grep -E "set[A-Z]\w+\("`
+**通过标准**: setTimeout/setInterval/事件回调中访问 state 时使用函数式更新或 useRef
+**严重级别**: High
+
+```tsx
+// 不推荐：count 始终是闭包创建时的值
+const [count, setCount] = useState(0);
+useEffect(() => {
+    const id = setInterval(() => {
+        setCount(count + 1);  // count 永远是 0
+    }, 1000);
+    return () => clearInterval(id);
+}, []);
+
+// 推荐：函数式更新
+setCount(prev => prev + 1);
+```
+
+---
+
+### 并发 mutation 冲突
+
+**搜索模式**: `grep -rE "useMutation" --include="*.tsx" -A 10 | grep -E "mutate\(|mutateAsync\("`
+**通过标准**: 防止同一资源被多次并发 mutation（使用 loading 状态禁用按钮或防抖）
+**严重级别**: Medium
+
+---
+
+### 缺少 AbortController
+
+**搜索模式**: `grep -rE "useEffect.*fetch\(" --include="*.tsx" | grep -v "AbortController\|signal\|abort"`
+**通过标准**: 组件卸载时必须取消未完成的 fetch 请求
+**严重级别**: Medium

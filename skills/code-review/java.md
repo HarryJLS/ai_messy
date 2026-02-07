@@ -353,6 +353,158 @@ grep -rE "private\s+static\s+\w+\s+instance" --include="*.java" | grep -v "volat
 
 ---
 
+### HashMap 多线程使用
+
+**搜索模式**: `grep -rE "new\s+HashMap<|HashMap<.*>\s+\w+\s*=" --include="*.java"` 结合上下文检查是否被多线程访问
+**通过标准**: 多线程场景不使用 HashMap，改用 ConcurrentHashMap
+**严重级别**: Critical
+**示例**: `HashMap` → `ConcurrentHashMap` 或加锁保护
+
+---
+
+### ArrayList 多线程使用
+
+**搜索模式**: `grep -rE "new\s+ArrayList<" --include="*.java"` 结合上下文检查
+**通过标准**: 多线程写入场景不使用 ArrayList，改用 CopyOnWriteArrayList 或加锁
+**严重级别**: High
+
+---
+
+### ConcurrentModificationException 风险
+
+**搜索模式**: `grep -rE "for\s*\([^:]+:\s*\w+\)" --include="*.java" -A 5 | grep -E "\.(remove|add|clear)\("`
+**通过标准**: 遍历时不直接修改集合，使用 Iterator.remove() 或 ConcurrentHashMap
+**严重级别**: High
+
+---
+
+### synchronized 锁对象不当
+
+**搜索模式**: `grep -rE "synchronized\s*\(\s*(\"[^\"]*\"|[A-Z].*\.valueOf|Integer|Long|Boolean)" --include="*.java"`
+**通过标准**: 禁止使用 String 常量、包装类缓存实例作为锁对象
+**严重级别**: High
+
+```java
+// 不推荐：String 常量池导致不同逻辑共享同一个锁
+synchronized ("lock") { ... }
+synchronized (Integer.valueOf(1)) { ... }
+
+// 推荐：使用专用锁对象
+private final Object lock = new Object();
+synchronized (lock) { ... }
+```
+
+---
+
+### synchronized 范围过大
+
+**搜索模式**: `grep -rE "synchronized\s+(public|private|protected)" --include="*.java"`
+**通过标准**: 避免整个方法加 synchronized，应缩小到最小临界区
+**严重级别**: Medium
+
+---
+
+### volatile 不保证原子性
+
+**搜索模式**: `grep -rE "volatile\s+" --include="*.java"` 结合检查是否有 `++`/`--`/`+=` 复合操作
+**通过标准**: volatile 变量不做复合操作（如 count++），应使用 AtomicInteger
+**严重级别**: High
+
+```java
+// 不推荐：volatile 不保证 ++ 原子性
+private volatile int count;
+count++;  // 非原子操作
+
+// 推荐
+private final AtomicInteger count = new AtomicInteger();
+count.incrementAndGet();
+```
+
+---
+
+### ThreadLocal 未清理
+
+**搜索模式**: `grep -rE "ThreadLocal<" --include="*.java"` + 检查是否有 `.remove()` 调用
+**通过标准**: 线程池环境下 ThreadLocal 必须在 finally 中 remove()
+**严重级别**: High
+
+```java
+// 不推荐
+threadLocal.set(value);
+doSomething();
+
+// 推荐
+threadLocal.set(value);
+try {
+    doSomething();
+} finally {
+    threadLocal.remove();
+}
+```
+
+---
+
+### Spring 单例 Bean 含可变状态
+
+**搜索模式**: `grep -rE "@(Service|Component|Repository|Controller|RestController)" --include="*.java" -A 20 | grep -E "private\s+(List|Map|Set|int|long|boolean|String)\s+\w+\s*[=;]" | grep -v "final"`
+**通过标准**: @Service/@Component 等单例 Bean 禁止定义非 final 可变成员变量
+**严重级别**: Critical
+
+```java
+// 不推荐：单例 Bean 中的可变状态
+@Service
+public class UserService {
+    private Map<String, User> cache = new HashMap<>();  // 多线程共享，非线程安全
+}
+
+// 推荐方案1：使用线程安全容器
+private final ConcurrentHashMap<String, User> cache = new ConcurrentHashMap<>();
+
+// 推荐方案2：使用 ThreadLocal
+private final ThreadLocal<Map<String, User>> cache = ThreadLocal.withInitial(HashMap::new);
+```
+
+---
+
+### ReentrantLock 未在 finally 释放
+
+**搜索模式**: `grep -rE "\.lock\(\)" --include="*.java" -A 5 | grep -v "finally" | grep -v "try"`
+**通过标准**: ReentrantLock.lock() 后必须在 try-finally 中 unlock()
+**严重级别**: Critical
+
+```java
+// 不推荐
+lock.lock();
+doSomething();
+lock.unlock();  // 如果 doSomething 抛异常，锁永远不释放
+
+// 推荐
+lock.lock();
+try {
+    doSomething();
+} finally {
+    lock.unlock();
+}
+```
+
+---
+
+### CompletableFuture 异常丢失
+
+**搜索模式**: `grep -rE "CompletableFuture\." --include="*.java" | grep -v "exceptionally\|handle\|whenComplete"`
+**通过标准**: CompletableFuture 链必须处理异常
+**严重级别**: High
+
+---
+
+### CountDownLatch 异常路径未 countDown
+
+**搜索模式**: `grep -rE "CountDownLatch" --include="*.java"` 结合检查 countDown 是否在 finally 中
+**通过标准**: countDown() 必须在 finally 中调用，防止异常导致 await 永久阻塞
+**严重级别**: High
+
+---
+
 ## Category: 异常日志
 
 ### 空 catch 块
