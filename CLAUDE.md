@@ -27,6 +27,7 @@ The primary workflow for structured development using TDD.
 
 | Command | Purpose |
 |---------|---------|
+| `/plan-preview` | Pre-research technical solution, output `task.md` for `/plan-init` |
 | `/plan-init` | Initialize project, create `features.json` and `logs/` directory |
 | `/plan-next` | Execute next pending task using TDD cycle (RED → GREEN → COMMIT) |
 | `/plan-log` | Manually log non-task progress (architecture decisions, urgent fixes) |

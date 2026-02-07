@@ -38,7 +38,8 @@ ai_messy_project/
 
 | 分类 | Skill | 命令 | 用途 |
 |------|-------|------|------|
-| **Agent 工作流** | plan-init | `/plan-init` | 初始化项目，创建 `features.json` 和 `logs/` |
+| **Agent 工作流** | plan-preview | `/plan-preview` | 方案预研，输出可直接喂给 `/plan-init` 的 `task.md` |
+| | plan-init | `/plan-init` | 初始化项目，创建 `features.json` 和 `logs/` |
 | | plan-next | `/plan-next` | 执行下一个任务 (TDD: RED → GREEN → COMMIT) |
 | | plan-log | `/plan-log` | 手动记录架构决策、紧急修复等 |
 | | plan-archive | `/plan-archive` | 归档已完成工作 |
@@ -55,6 +56,8 @@ ai_messy_project/
 
 ```text
 skills/
+├── plan-preview/            # 方案预研，输出 task.md
+│   └── SKILL.md
 ├── plan-init/              # 初始化 Agent 框架
 │   └── SKILL.md
 ├── plan-next/              # 执行下一个待处理任务 (TDD 循环)
@@ -115,7 +118,13 @@ skills/
 - **任务隔离**：每个任务独立日志文件 (`logs/task-{id}.log`)
 - **TDD 强制**：必须先 RED 再 GREEN
 
-**执行流程：**
+**完整流程：**
+
+```text
+/plan-preview → /plan-init → /plan-next (循环) → /plan-archive
+```
+
+**执行流程（单个任务）：**
 
 ```text
 READ → EXPLORE → PLAN → RED 🔴 → IMPLEMENT → GREEN 🟢 → COMMIT
@@ -123,10 +132,36 @@ READ → EXPLORE → PLAN → RED 🔴 → IMPLEMENT → GREEN 🟢 → COMMIT
 
 | 命令 | 触发词 | 说明 |
 |------|--------|------|
+| `/plan-preview` | "方案预研"、"技术方案"、"架构评审"、"需求分析" | 以架构师视角进行方案预研，输出 `task.md` |
 | `/plan-init` | "初始化项目"、"开始新项目"、"创建任务列表" | 创建 `features.json` 和 `logs/` 目录，交互式定义任务 |
 | `/plan-next` | "执行下一个任务"、"继续任务"、"开始开发" | 执行七阶段 TDD 循环 |
 | `/plan-log` | "记录进度"、"写日志"、"记录决策" | 手动记录非任务进度 |
 | `/plan-archive` | "归档项目"、"清理工作区"、"备份任务" | 归档到 `archives/YYYY-MM-DD-HHMMSS/` |
+
+#### plan-preview 方案预研
+
+`/plan-preview` 是 `/plan-init` 的**前置环节**，以资深架构师视角通过代码探索 + 多轮问答输出技术方案。
+
+**五大场景**：新功能开发、性能/逻辑优化、线上问题修复、项目结构优化、中间件/工具创建
+
+**协议流程**（6 步）：
+
+```text
+步骤 0: 进入 Plan Mode
+步骤 1: 需求收集与场景识别 → ⛔ 用户确认
+步骤 2: 代码探索与现状分析 → ⛔ 用户确认
+步骤 3: 协作式方案构建（技术决策 + 任务拆解）→ ⛔ 用户确认
+步骤 4: 完善方案文档（风险、数据流、接口设计）
+步骤 5: ExitPlanMode 提交审批 → ⛔ 用户审批
+步骤 6: 写入 task.md（审批后执行）
+```
+
+**核心特性**：
+- **渐进式文档输出**：每步完成后写入 Plan Mode plan file（草稿区），用户实时可查
+- **门控机制**：步骤 1/2/3/5 都有显式用户确认门控
+- **格式兼容**：输出的 task.md 与 `/plan-init` 完全兼容，含 `implementationGuide` 增强字段
+- **快速模式**：用户已有部分前置工作时可跳过对应步骤
+- **category 超集**：`core|ui|feature|optimization|bugfix|refactor|middleware`（兼容 plan-init）
 
 **核心文件：**
 
@@ -500,7 +535,10 @@ brainstorming → using-git-worktrees → writing-plans → subagent-driven-deve
 ### 1. 使用 Agent 开发
 
 ```bash
-# 1. 初始化项目
+# 0. 方案预研（可选，适合复杂需求）
+/plan-preview
+
+# 1. 初始化项目（基于 task.md 或交互式定义）
 /plan-init
 
 # 2. 定义任务后，开始执行
