@@ -32,6 +32,31 @@ The primary workflow for structured development using TDD.
 | `/plan-next` | Execute next pending task using TDD cycle (RED → GREEN → COMMIT) |
 | `/plan-log` | Manually log non-task progress (architecture decisions, urgent fixes) |
 | `/plan-archive` | Archive completed work to `archives/YYYY-MM-DD-HHMMSS/` |
+| `/dev-team` | Full orchestration: preview + init + next + simplifier + fixer |
+
+## Dev Team (Agent Team Orchestration)
+
+See `skills/dev-team/SKILL.md` for full specification.
+
+Multi-agent team that orchestrates the full development pipeline automatically:
+
+**Team roles:**
+
+| Role | Agent | Responsibility |
+|------|-------|----------------|
+| lead | self | Orchestration, user communication, decision relay |
+| architect | general-purpose (dontAsk) | Plan preview + project init |
+| developer | general-purpose (bypassPermissions) | TDD task execution loop |
+| polisher | general-purpose (bypassPermissions) | Code simplification + style fix |
+
+**Pipeline:** Plan Preview → Project Init → TDD Dev Loop → Code Polish → Report
+
+**Cross-project reference support:**
+- Phase 0: lead identifies reference project path from user input
+- Phase 1: architect explores reference project code, writes key file paths into `task.md` references
+- Phase 3: developer reads references automatically via plan-next's reference learning flow (locate → analyze → trace calls → adapt)
+
+**Auto-resume:** Re-running `/dev-team` detects existing files (`task.md`, `features.json`) and skips to the appropriate phase.
 
 ## Code Review & Fixer
 
