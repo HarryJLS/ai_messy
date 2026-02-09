@@ -30,7 +30,7 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 
 ## 日志格式
 
-写入 `logs/task-{id}.log`：
+追加到 `dev-YYYY-MM-DD.log`：
 
 ```
 [时间戳] [阶段] Task N: 一句话概述
@@ -203,13 +203,13 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 1. ✅ 测试通过（RED → GREEN）
 2. ✅ `acceptance` 全部满足
 3. ✅ `passes: true` 已设置
-4. ✅ `logs/task-{id}.log` 包含 3-4 条日志
+4. ✅ `dev-YYYY-MM-DD.log` 中包含该任务的 3-4 条日志
 
 ## 恢复指南
 
 ```
 1. 读 features.json → 找到当前任务
-2. 读 logs/task-{id}.log 最后一条 → 查看"状态"和"下一步"
+2. 读 dev-YYYY-MM-DD.log → 搜索该 Task ID 的最后一条日志 → 查看"状态"和"下一步"
 3. 从"下一步"继续执行
 ```
 
@@ -227,6 +227,6 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 
 ```
 ✅ 任务 [ID] 完成！
-📄 日志: logs/task-{id}.log
+📄 日志: dev-YYYY-MM-DD.log
 → 运行 /plan-next 继续下一任务
 ```

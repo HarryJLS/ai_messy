@@ -99,11 +99,11 @@ task.md 已确认。请继续执行 /plan-init。
 - 非关键门控（文件冲突处理）：选择"覆盖"，跳过门控
 - 关键决策（核心目标有歧义、技术选型需选择时）：SendMessage 给 lead
 - ExitPlanMode 的审批会自动发给 lead 处理
-- 完成后 SendMessage 通知 lead，报告 features.json 和 logs/ 已创建
+- 完成后 SendMessage 通知 lead，报告 features.json 和 dev-YYYY-MM-DD.log 已创建
 ```
 
 **lead 验证：**
-- 确认 `features.json` 和 `logs/` 存在 → 标记任务完成
+- 确认 `features.json` 和 `dev-*.log` 存在 → 标记任务完成
 - 向 architect 发送 shutdown_request → 进入阶段 3
 
 ---
@@ -181,7 +181,7 @@ spawn polisher（`subagent_type: general-purpose`, `mode: bypassPermissions`, `t
 ### 产出文件
 - `task.md` - 技术方案文档
 - `features.json` - 任务状态（所有 passes: true）
-- `logs/` - 开发日志
+- `dev-YYYY-MM-DD.log` - 开发日志
 - 代码实现 + 测试文件
 
 ### 后续建议

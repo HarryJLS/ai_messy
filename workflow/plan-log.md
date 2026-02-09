@@ -6,10 +6,8 @@
 
 ## 📂 日志文件架构
 
-**任务级隔离**（token 高效设计）：
-- `logs/task-{id}.log` - 每个任务有专属日志文件
-- `logs/init.log` - 初始化日志（来自 /plan-init）
-- `logs/manual-{YYYY-MM-DD}.log` - 手动日志
+**统一日志**（简化管理）：
+- `dev-YYYY-MM-DD.log` - 所有日志条目按时间序写入此文件（项目根目录，YYYY-MM-DD 为初始化日期）
 
 ---
 
@@ -21,10 +19,10 @@
 
 ## 何时使用
 
-⚠️ `/plan-next` **自动记录到 `logs/task-{id}.log`**（5 个阶段）
-⚠️ `/plan-init` **自动记录到 `logs/init.log`**
+⚠️ `/plan-next` **自动记录到 `dev-YYYY-MM-DD.log`**
+⚠️ `/plan-init` **自动记录到 `dev-YYYY-MM-DD.log`**
 
-**仅用于手动、非任务进度**（写入 `logs/manual-{date}.log`）：
+**仅用于手动、非任务进度**（同样写入 `dev-YYYY-MM-DD.log`）：
 - 架构/设计决策（非任务部分）
 - 会议记录、技术评审
 - 紧急 bug 修复（不在 features.json 中）
@@ -55,11 +53,9 @@
 ### 步骤 3: APPEND
 
 **确定日志文件**：
-- 如果为 features.json 中的特定任务记录 → `logs/task-{id}.log`
-- 如果在初始化期间记录 → `logs/init.log`
-- 如果手动记录（非任务相关）→ 创建 `logs/manual-{YYYY-MM-DD}.log`
+- 所有日志统一追加到 `dev-YYYY-MM-DD.log`
 
-追加到适当的日志文件，使用**增强结构化格式**：
+追加到 `dev-YYYY-MM-DD.log`，使用**增强结构化格式**：
 
 ```
 [ISO 时间戳] [类型] Task [ID]: [一句话总结]
@@ -100,7 +96,6 @@
 ## 成功标准
 
 全部必须为真：
-1. ✅ 正确的日志文件已创建/更新
+1. ✅ `dev-YYYY-MM-DD.log` 已更新
 2. ✅ 条目使用增强结构化格式，包含所有相关部分
 3. ✅ 时间戳和类型标签正确
-4. ✅ 日志文件存储在 `logs/` 目录

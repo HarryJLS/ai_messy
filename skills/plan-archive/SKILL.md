@@ -16,7 +16,7 @@ description: 归档已完成的功能、日志和相关文档。当用户说 "/p
 ## 归档隔离原则
 
 ⚠️ **关键**：归档是只读快照，与活动工作流隔离：
-- 活动工作流只使用根目录的 `./features.json` 和 `./logs/` 目录
+- 活动工作流只使用根目录的 `./features.json` 和 `./dev-YYYY-MM-DD.log`
 - `archives/` 目录**永远不会**被 `plan-init`、`plan-next` 或 `plan-log` 扫描
 - 恢复只能手动进行
 
@@ -24,7 +24,7 @@ description: 归档已完成的功能、日志和相关文档。当用户说 "/p
 
 - 多个功能完成，想要重新开始
 - 里程碑/冲刺结束
-- `logs/` 目录有很多已完成的任务日志
+- 开发日志文件过大，需要归档重新开始
 - 开始新的开发阶段
 - 项目迭代完成
 
@@ -33,11 +33,7 @@ description: 归档已完成的功能、日志和相关文档。当用户说 "/p
 ```
 archives/YYYY-MM-DD-HHMMSS/
 ├── features.json
-├── logs/
-│   ├── init.log
-│   ├── task-1.log
-│   ├── task-2.log
-│   └── task-N.log
+├── dev-YYYY-MM-DD.log
 ├── ARCHIVE_INFO.md
 └── docs/agents/*.md  (可选)
 ```
@@ -47,13 +43,12 @@ archives/YYYY-MM-DD-HHMMSS/
 ### 阶段 1: 分析
 
 1. 检查根目录是否存在 `features.json`
-2. 检查 `logs/` 目录是否存在且有日志文件
+2. 检查根目录是否存在 `dev-*.log` 文件
 3. 统计 features.json 中的任务数
-4. 统计 `logs/` 目录中的日志文件数
-5. 扫描 `agents/` 目录中的文档文件（可选）
-6. 显示简要摘要
+4. 扫描 `agents/` 目录中的文档文件（可选）
+5. 显示简要摘要
 
-⛔ **门控**：如果 features.json 和 logs/ 目录都不存在，停止并显示错误消息
+⛔ **门控**：如果 features.json 和 dev-*.log 文件都不存在，停止并显示错误消息
 
 ### 阶段 2: 创建归档
 
@@ -61,7 +56,7 @@ archives/YYYY-MM-DD-HHMMSS/
 
 1. 创建 `archives/YYYY-MM-DD-HHMMSS/` 目录
 2. 复制 `features.json` 到归档（如果存在）
-3. 复制 `logs/` 目录到归档（如果存在）
+3. 复制 `dev-*.log` 文件到归档（如果存在）
 4. 创建 `ARCHIVE_INFO.md`:
 
 ```markdown
@@ -69,14 +64,11 @@ archives/YYYY-MM-DD-HHMMSS/
 
 ## 摘要
 - 归档任务: X 个总计（Y 个完成，Z 个待处理）
-- 日志文件: N 个任务日志 + init.log
+- 日志文件: dev-YYYY-MM-DD.log（统一开发日志）
 - 创建时间: [带时区的 ISO 时间戳]
 
 ## 归档的日志文件
-- init.log - 初始化日志
-- task-1.log - [任务 1 描述]
-- task-2.log - [任务 2 描述]
-- ...
+- dev-YYYY-MM-DD.log - 统一开发日志
 
 ## 文档
 参见 docs/agents/（如适用）
@@ -107,13 +99,12 @@ archives/YYYY-MM-DD-HHMMSS/
 
 **验证步骤**：
 1. 检查 `archives/[timestamp]/features.json` 存在且是有效 JSON
-2. 检查 `archives/[timestamp]/logs/` 目录存在
-3. 验证归档的 logs 目录与原目录有相同数量的 .log 文件
-4. 检查 `archives/[timestamp]/ARCHIVE_INFO.md` 存在
+2. 验证 `archives/[timestamp]/dev-*.log` 存在
+3. 检查 `archives/[timestamp]/ARCHIVE_INFO.md` 存在
 
 **如果验证通过**：
 1. **删除** 根目录的 `./features.json`
-2. **删除** 根目录的 `./logs/` 目录
+2. **删除** 根目录的 `./dev-*.log` 文件
 3. 如果用户选择"移动"文档：**删除** `./agents/*.md` 文件
 
 **如果验证失败**：
@@ -131,14 +122,12 @@ archives/YYYY-MM-DD-HHMMSS/
 
 归档到: archives/[YYYY-MM-DD-HHMMSS]/
 • features.json - X 个任务已归档（Y 个完成，Z 个待处理）
-• logs/ 目录 - N 个日志文件已归档
-  → init.log - 初始化日志
-  → task-*.log - 单个任务日志
+• dev-YYYY-MM-DD.log - 统一开发日志已归档
 • 文档 - [N 个文件已归档 / 跳过 / 未找到]
 
 工作区已清理:
 • 从根目录删除了 features.json
-• 从根目录删除了 logs/ 目录
+• 从根目录删除了 dev-*.log 文件
 • [已删除/保留] agents/ 文档
 
 Token 节省:
@@ -150,7 +139,7 @@ Token 节省:
 • 运行 /plan-init 开始新项目
 • 或手动从 archives/ 恢复（如需要）：
   → 复制 archives/[timestamp]/features.json 到根目录
-  → 复制 archives/[timestamp]/logs/ 到根目录
+  → 复制 archives/[timestamp]/dev-*.log 到根目录
 ```
 
 ## 规则
@@ -161,16 +150,16 @@ Token 节省:
 - **格式**：时间戳 `YYYY-MM-DD-HHMMSS` 用于按时间排序
 - **完整性**：每个归档必须有 ARCHIVE_INFO.md
 - **文档**：仅在 agents/ 文件存在时提示
-- **清理**：成功归档后始终删除原始 features.json 和 logs/ 目录
+- **清理**：成功归档后始终删除原始 features.json 和 dev-*.log 文件
 
 ## 成功标准
 
 全部必须为真：
 1. ✅ 归档目录已创建: `archives/YYYY-MM-DD-HHMMSS/`
 2. ✅ `features.json` 已复制到归档
-3. ✅ `logs/` 目录已复制到归档
+3. ✅ `dev-*.log` 文件已复制到归档
 4. ✅ `ARCHIVE_INFO.md` 已创建
 5. ✅ 归档完整性已验证
 6. ✅ 原始 `features.json` 已从根目录**删除**
-7. ✅ 原始 `logs/` 目录已从根目录**删除**
+7. ✅ 原始 `dev-*.log` 文件已从根目录**删除**
 8. ✅ 文档按用户选择处理

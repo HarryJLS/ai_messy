@@ -14,7 +14,7 @@ description: 资深架构师视角的技术方案预研，输出可直接喂给 
 | 阶段 | 工具 | 产出 |
 |------|------|------|
 | 方案预研 | `/plan-preview` | `task.md`（技术方案文档） |
-| 任务初始化 | `/plan-init` | `features.json` + `logs/` |
+| 任务初始化 | `/plan-init` | `features.json` + `dev-YYYY-MM-DD.log` |
 | 任务执行 | `/plan-next` | 代码实现 |
 
 ## 设计原则

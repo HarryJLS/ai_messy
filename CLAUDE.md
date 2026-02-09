@@ -28,7 +28,7 @@ The primary workflow for structured development using TDD.
 | Command | Purpose |
 |---------|---------|
 | `/plan-preview` | Pre-research technical solution, output `task.md` for `/plan-init` |
-| `/plan-init` | Initialize project, create `features.json` and `logs/` directory |
+| `/plan-init` | Initialize project, create `features.json` and `dev-YYYY-MM-DD.log` |
 | `/plan-next` | Execute next pending task using TDD cycle (RED → GREEN → COMMIT) |
 | `/plan-log` | Manually log non-task progress (architecture decisions, urgent fixes) |
 | `/plan-archive` | Archive completed work to `archives/YYYY-MM-DD-HHMMSS/` |
@@ -73,9 +73,7 @@ Multi-agent team that orchestrates the full development pipeline automatically:
 
 ### Key Files
 - `features.json` - Single source of truth for tasks (array of task objects with `passes: boolean`)
-- `logs/init.log` - Initialization log
-- `logs/task-{id}.log` - Per-task isolated logs (each task gets 3-5 phase logs)
-- `logs/manual-{date}.log` - Manual log entries
+- `dev-YYYY-MM-DD.log` - Unified development log (all entries appended chronologically with structured tags)
 
 ### Task Execution Flow (plan-next)
 1. **READ** - Find first task with `passes: false`
@@ -87,7 +85,7 @@ Multi-agent team that orchestrates the full development pipeline automatically:
 7. **COMMIT** - Set `passes: true`, write final log
 
 ### Design Principles
-- Anti-forgetting: Restore context by reading task logs
+- Anti-forgetting: Restore context by searching dev-YYYY-MM-DD.log for task entries
 - Anti-scope-creep: JSON defines scope, logs provide detail
 - Precision: Only change what needs changing, never touch unrelated code
 - Senior developer perspective: Consider reusability, extensibility, robustness

@@ -4,18 +4,16 @@
 
 ## 核心概念
 
-| 文件/目录 | 用途 |
-|----------|------|
+| 文件 | 用途 |
+|------|------|
 | `features.json` | 任务的单一事实来源（任务定义、验收标准、状态） |
-| `logs/` | 任务隔离日志目录 |
-| `logs/init.log` | 初始化日志 |
-| `logs/task-{id}.log` | 单个任务日志（每任务5阶段） |
+| `dev-YYYY-MM-DD.log` | 统一开发日志（项目根目录，YYYY-MM-DD 为初始化日期） |
 
 **设计原则**：
 - **抗遗忘**：通过读取相关任务日志恢复上下文
 - **抗范围蔓延**：JSON 定义范围，日志提供详细上下文
 - **可演进**：AI 可在执行前优化方案
-- **隔离性**：每个任务的日志独立，便于精准检索
+- **统一日志**：所有条目按时间序写入单一文件，通过结构化标签区分来源
 - **精准执行**：只改该改的，不碰不该碰的（宁可漏改，不可误改）
 - **资深开发视角**：始终以资深开发的思维方式思考问题（Go/Java/Python/前端），考虑复用性、扩展性、健壮性
 
@@ -33,7 +31,7 @@
 
 #### 步骤 1: 检查现有文件
 
-检查项目根目录的 `features.json` 和 `logs/` 目录。
+检查项目根目录的 `features.json` 和 `dev-*.log` 文件。
 
 **如果 `features.json` 存在**，询问用户：
 
@@ -44,7 +42,7 @@
 | 合并 | 保留现有，仅添加非重复项 |
 | 取消 | 中止初始化 → 停止 |
 
-**如果 `logs/` 目录存在且有文件**，告知用户："发现现有日志，将保留它们。"
+**如果 `dev-*.log` 文件存在**，告知用户："发现现有日志，将保留它们。"
 
 ⛔ **门控**: 在用户选择选项前不得继续（针对 features.json）
 
@@ -52,35 +50,33 @@
 
 1. **创建 `features.json`**: `[]`（空数组）
 
-2. **创建 `logs/` 目录**（如果不存在）: `mkdir -p logs`
-
-3. **创建 `logs/init.log`** 并写入头部:
+2. **创建 `dev-YYYY-MM-DD.log`**（YYYY-MM-DD 为当天日期）并写入头部:
 ```
 === Agent 初始化日志 ===
 初始化时间: [时间戳]
 格式: 增强结构化格式（多段落日志）
 
 日志类型参考:
-- [Init] - 框架初始化（本文件）
-- [Explore] - 代码库探索（在任务日志中）
-- [Pending] - 任务规划（在任务日志中）
-- [TDD-Red] - 红灯确认（在任务日志中）
-- [TDD-Green] - 绿灯验证（在任务日志中）
-- [Completed] - 任务完成（在任务日志中）
+- [Init] - 框架初始化
+- [Explore] - 代码库探索
+- [Pending] - 任务规划
+- [TDD-Red] - 红灯确认
+- [TDD-Green] - 绿灯验证
+- [Completed] - 任务完成
 - [Fix/Refactor/Optimization/Design/Test/Docs/Config] - 手动日志
 
-每个任务有独立日志文件: logs/task-{id}.log
+所有条目按时间序写入本文件，通过 [Phase] Task N: 标签区分来源
 ---
 ```
 
-4. **追加初始日志条目到 `logs/init.log`**:
+4. **追加初始日志条目到 `dev-YYYY-MM-DD.log`**:
 ```
 [ISO 时间戳] [Init] Agent 框架设置
 ├─ Context: 用户初始化 Agent 进行结构化开发工作流
-├─ Files: features.json（已创建）| logs/（目录已创建）| logs/init.log（本文件）
-├─ Changes: 设置任务隔离日志架构
-├─ Tech: JSON 用于任务存储 | 独立日志文件提升 token 效率
-├─ Decision: 任务级日志隔离 → 更好的 token 管理，更易恢复上下文
+├─ Files: features.json（已创建）| dev-YYYY-MM-DD.log（本文件）
+├─ Changes: 设置统一日志架构
+├─ Tech: JSON 用于任务存储 | 统一日志文件简化管理
+├─ Decision: 统一日志架构 → 简化管理，结构化标签保证可检索
 └─ Result: 框架准备就绪，可定义项目目标和任务分解
 ---
 ```
@@ -150,17 +146,17 @@
 
 6. **向用户展示任务列表** 并请求确认
 7. ⛔ **等待用户确认** 后再写入 features.json
-8. **追加任务分解日志到 `logs/init.log`**
+8. **追加任务分解日志到 `dev-YYYY-MM-DD.log`**
 
 #### 步骤 4: 最终总结
 
-追加最终初始化总结到 `logs/init.log`:
+追加最终初始化总结到 `dev-YYYY-MM-DD.log`:
 ```
 [ISO 时间戳] [Init] 初始化完成 - 准备执行
 ├─ Context: 框架设置完成，所有状态文件已创建
-├─ Files: features.json（N 个任务）| logs/init.log（3 条日志）| logs/ 目录就绪
+├─ Files: features.json（N 个任务）| dev-YYYY-MM-DD.log（3 条日志）
 ├─ Changes: 完成初始化 - 任务已定义，日志框架已设置
-├─ Tech: 任务隔离日志架构 | 基于 JSON 的任务管理
+├─ Tech: 统一日志架构 | 基于 JSON 的任务管理
 ├─ Decision: 所有任务初始 passes:false → 需验证后才能标记完成
 └─ Result: 系统准备好执行 /plan-next | 所有 N 个任务待处理
 ---
@@ -173,13 +169,11 @@
 
 已创建:
 • features.json - [N] 个任务就绪（全部 passes: false）
-• logs/ - 任务隔离日志目录
-• logs/init.log - [3] 条初始化日志已记录
+• dev-YYYY-MM-DD.log - [3] 条初始化日志已记录
 
 日志架构:
-→ 每个任务将获得 logs/task-{id}.log，包含5个详细阶段日志
-→ Token 高效：只读取需要的日志
-→ 无全局日志文件 - 完全隔离
+→ 所有日志统一写入 dev-YYYY-MM-DD.log
+→ 通过 [Phase] Task N: 标签区分来源，精准检索
 
 下一步:
 • 运行 /plan-next 开始第一个任务
@@ -346,14 +340,14 @@
 1. ✅ 测试通过（RED → GREEN）
 2. ✅ `acceptance` 全部满足
 3. ✅ `passes: true` 已设置
-4. ✅ `logs/task-{id}.log` 包含 3-4 条日志
+4. ✅ `dev-YYYY-MM-DD.log` 中包含该任务的 3-4 条日志
 
 ### 恢复指南
 
 **新会话恢复流程**：
 ```
 1. 读 features.json → 找到当前任务
-2. 读 logs/task-{id}.log 最后一条 → 查看"状态"和"下一步"
+2. 读 dev-YYYY-MM-DD.log → 搜索该 Task ID 的最后一条日志 → 查看"状态"和"下一步"
 3. 从"下一步"继续执行
 ```
 
@@ -362,7 +356,7 @@
 ```
 ✅ 任务 [ID] 完成！
 
-📄 日志: logs/task-{id}.log
+📄 日志: dev-YYYY-MM-DD.log
 → 运行 /plan-next 继续下一任务
 ```
 
@@ -376,10 +370,8 @@
 
 ### 📂 日志文件架构
 
-**任务级隔离**（token 高效设计）：
-- `logs/task-{id}.log` - 每个任务有专属日志文件
-- `logs/init.log` - 初始化日志（来自 /plan-init）
-- `logs/manual-{YYYY-MM-DD}.log` - 手动日志
+**统一日志**（简化管理）：
+- `dev-YYYY-MM-DD.log` - 所有日志条目按时间序写入此文件（项目根目录）
 
 ### ⚠️ 范围边界
 
@@ -389,10 +381,10 @@
 
 ### 何时使用
 
-⚠️ `/plan-next` **自动记录到 `logs/task-{id}.log`**（5 个阶段）
-⚠️ `/plan-init` **自动记录到 `logs/init.log`**
+⚠️ `/plan-next` **自动记录到 `dev-YYYY-MM-DD.log`**（5 个阶段）
+⚠️ `/plan-init` **自动记录到 `dev-YYYY-MM-DD.log`**
 
-**仅用于手动、非任务进度**（写入 `logs/manual-{date}.log`）：
+**仅用于手动、非任务进度**（同样写入 `dev-YYYY-MM-DD.log`）：
 - 架构/设计决策（非任务部分）
 - 会议记录、技术评审
 - 紧急 bug 修复（不在 features.json 中）
@@ -421,11 +413,9 @@
 #### 步骤 3: APPEND
 
 **确定日志文件**：
-- 如果为 features.json 中的特定任务记录 → `logs/task-{id}.log`
-- 如果在初始化期间记录 → `logs/init.log`
-- 如果手动记录（非任务相关）→ 创建 `logs/manual-{YYYY-MM-DD}.log`
+- 所有日志统一追加到 `dev-YYYY-MM-DD.log`
 
-追加到适当的日志文件，使用**增强结构化格式**：
+追加到 `dev-YYYY-MM-DD.log`，使用**增强结构化格式**：
 
 ```
 [ISO 时间戳] [类型] Task [ID]: [一句话总结]
@@ -462,10 +452,9 @@
 ### 成功标准
 
 全部必须为真：
-1. ✅ 正确的日志文件已创建/更新
+1. ✅ `dev-YYYY-MM-DD.log` 已更新
 2. ✅ 条目使用增强结构化格式，包含所有相关部分
 3. ✅ 时间戳和类型标签正确
-4. ✅ 日志文件存储在 `logs/` 目录
 
 ---
 
@@ -484,7 +473,7 @@
 ### 归档隔离原则
 
 ⚠️ **关键**：归档是只读快照，与活动工作流隔离：
-- 活动工作流只使用根目录的 `./features.json` 和 `./logs/` 目录
+- 活动工作流只使用根目录的 `./features.json` 和 `./dev-YYYY-MM-DD.log`
 - `archives/` 目录**永远不会**被 `plan-init`、`plan-next` 或 `plan-log` 扫描
 - 恢复只能手动进行
 
@@ -492,7 +481,7 @@
 
 - 多个功能完成，想要重新开始
 - 里程碑/冲刺结束
-- `logs/` 目录有很多已完成的任务日志
+- 开发日志文件过大，需要归档重新开始
 - 开始新的开发阶段
 - 项目迭代完成
 
@@ -501,11 +490,7 @@
 ```
 archives/YYYY-MM-DD-HHMMSS/
 ├── features.json
-├── logs/
-│   ├── init.log
-│   ├── task-1.log
-│   ├── task-2.log
-│   └── task-N.log
+├── dev-YYYY-MM-DD.log
 ├── ARCHIVE_INFO.md
 └── docs/agents/*.md  (可选)
 ```
@@ -515,13 +500,12 @@ archives/YYYY-MM-DD-HHMMSS/
 #### 阶段 1: 分析
 
 1. 检查根目录是否存在 `features.json`
-2. 检查 `logs/` 目录是否存在且有日志文件
+2. 检查根目录是否存在 `dev-*.log` 文件
 3. 统计 features.json 中的任务数
-4. 统计 `logs/` 目录中的日志文件数（*.log 文件）
-5. 扫描 `agents/` 目录中的文档文件（可选）
-6. 显示简要摘要
+4. 扫描 `agents/` 目录中的文档文件（可选）
+5. 显示简要摘要
 
-⛔ **门控**：如果 features.json 和 logs/ 目录都不存在，停止并显示错误消息
+⛔ **门控**：如果 features.json 和 dev-*.log 文件都不存在，停止并显示错误消息
 
 #### 阶段 2: 创建归档
 
@@ -529,21 +513,18 @@ archives/YYYY-MM-DD-HHMMSS/
 
 1. 创建 `archives/YYYY-MM-DD-HHMMSS/` 目录
 2. 复制 `features.json` 到归档（如果存在）
-3. 复制 `logs/` 目录到归档（如果存在）- 包含所有日志文件
+3. 复制 `dev-*.log` 文件到归档（如果存在）
 4. 创建 `ARCHIVE_INFO.md`:
 ```markdown
 # 归档: [ISO 时间戳]
 
 ## 摘要
 - 归档任务: X 个总计（Y 个完成，Z 个待处理）
-- 日志文件: N 个任务日志 + init.log
+- 日志文件: dev-YYYY-MM-DD.log（统一开发日志）
 - 创建时间: [带时区的 ISO 时间戳]
 
 ## 归档的日志文件
-- init.log - 初始化日志
-- task-1.log - [任务 1 描述]
-- task-2.log - [任务 2 描述]
-- ... [列出所有任务日志]
+- dev-YYYY-MM-DD.log - 统一开发日志
 
 ## 文档
 参见 docs/agents/（如适用）
@@ -586,13 +567,12 @@ archives/YYYY-MM-DD-HHMMSS/
 
 **验证步骤**：
 1. 检查 `archives/[timestamp]/features.json` 存在且是有效 JSON（如果原文件存在）
-2. 检查 `archives/[timestamp]/logs/` 目录存在（如果原目录存在）
-3. 验证归档的 logs 目录与原目录有相同数量的 .log 文件
-4. 检查 `archives/[timestamp]/ARCHIVE_INFO.md` 存在
+2. 验证 `archives/[timestamp]/dev-*.log` 存在
+3. 检查 `archives/[timestamp]/ARCHIVE_INFO.md` 存在
 
 **如果验证通过**：
 1. **删除** 根目录的 `./features.json`（如果已归档）
-2. **删除** 根目录的 `./logs/` 目录（如果已归档）- 移除所有任务日志
+2. **删除** 根目录的 `./dev-*.log` 文件（如果已归档）
 3. 如果用户选择"移动"文档：**删除** `./agents/*.md` 文件
 
 **如果验证失败**：
@@ -611,14 +591,12 @@ archives/YYYY-MM-DD-HHMMSS/
 
 归档到: archives/[YYYY-MM-DD-HHMMSS]/
 • features.json - X 个任务已归档（Y 个完成，Z 个待处理）
-• logs/ 目录 - N 个日志文件已归档
-  → init.log - 初始化日志
-  → task-*.log - 单个任务日志（每任务完整5阶段历史）
+• dev-YYYY-MM-DD.log - 统一开发日志已归档
 • 文档 - [N 个文件已归档 / 跳过 / 未找到]
 
 工作区已清理:
 • 从根目录删除了 features.json
-• 从根目录删除了 logs/ 目录（所有任务日志已移除）
+• 从根目录删除了 dev-*.log 文件
 • [已删除/保留] agents/ 文档
 
 Token 节省:
@@ -630,7 +608,7 @@ Token 节省:
 • 运行 /plan-init 开始新项目
 • 或手动从 archives/ 恢复（如需要）：
   → 复制 archives/[timestamp]/features.json 到根目录
-  → 复制 archives/[timestamp]/logs/ 到根目录
+  → 复制 archives/[timestamp]/dev-*.log 到根目录
 ```
 
 ### 规则
@@ -639,21 +617,21 @@ Token 节省:
 - **隔离**：命令只从根目录读取，永不从 `archives/` 读取
 - **安全**：删除任何原文件前必须验证归档完整性
 - **格式**：时间戳 `YYYY-MM-DD-HHMMSS` 用于按时间排序
-- **完整性**：每个归档必须有 ARCHIVE_INFO.md 和至少一个：features.json 或 logs/ 目录
+- **完整性**：每个归档必须有 ARCHIVE_INFO.md
 - **文档**：仅在 agents/ 文件存在时提示
-- **清理**：成功归档后始终删除原始 features.json 和 logs/ 目录
-- **日志保留**：归档整个 logs/ 目录，所有任务日志完整保留
+- **清理**：成功归档后始终删除原始 features.json 和 dev-*.log 文件
+- **日志保留**：归档日志文件完整保留
 
 ### 成功标准
 
 全部必须为真：
 1. ✅ 归档目录已创建: `archives/YYYY-MM-DD-HHMMSS/`
 2. ✅ `features.json` 已复制到归档（如果根目录存在）
-3. ✅ `logs/` 目录已复制到归档，包含所有 .log 文件（如果根目录存在）
+3. ✅ `dev-*.log` 文件已复制到归档（如果根目录存在）
 4. ✅ `ARCHIVE_INFO.md` 已创建，包含完整元数据
 5. ✅ 归档完整性已验证（文件数匹配）
 6. ✅ 原始 `features.json` 已从根目录**删除**（如果已归档）
-7. ✅ 原始 `logs/` 目录已从根目录**删除**（如果已归档）
+7. ✅ 原始 `dev-*.log` 文件已从根目录**删除**（如果已归档）
 8. ✅ 文档按用户选择处理（如果存在）
 
 ---
@@ -683,7 +661,7 @@ Token 节省:
 
 新会话恢复流程：
 1. 读取 `features.json` → 找到当前任务（第一个 `passes: false`）
-2. 读取 `logs/task-{id}.log` 最后一条 → 查看"状态"和"下一步"
+2. 读取 `dev-YYYY-MM-DD.log` → 搜索该 Task ID 的最后一条日志 → 查看"状态"和"下一步"
 3. 从"下一步"继续执行
 
 ### 状态对应表

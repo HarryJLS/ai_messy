@@ -6,18 +6,16 @@
 
 ## 核心文件
 
-| 文件/目录 | 用途 |
-|----------|------|
+| 文件 | 用途 |
+|------|------|
 | `features.json` | 任务的单一事实来源（任务定义、验收标准、状态） |
-| `logs/` | 任务隔离日志目录 |
-| `logs/init.log` | 初始化日志 |
-| `logs/task-{id}.log` | 单个任务日志（每任务5阶段） |
+| `dev-YYYY-MM-DD.log` | 统一开发日志（项目根目录，YYYY-MM-DD 为初始化日期） |
 
 ## 设计原则
 
 - **抗遗忘**：通过读取相关任务日志恢复上下文
 - **抗范围蔓延**：JSON 定义范围，日志提供详细上下文
-- **隔离性**：每个任务的日志独立，便于精准检索
+- **统一日志**：所有条目按时间序写入单一文件，通过结构化标签区分来源
 - **精准执行**：只改该改的，不碰不该碰的
 - **资深开发视角**：考虑复用性、扩展性、健壮性
 
@@ -29,7 +27,7 @@
 
 ### 步骤 1: 检查现有文件
 
-检查项目根目录的 `features.json` 和 `logs/` 目录。
+检查项目根目录的 `features.json` 和 `dev-*.log` 文件。
 
 **如果 `features.json` 存在**，询问用户：
 
@@ -40,7 +38,7 @@
 | 合并 | 保留现有，仅添加非重复项 |
 | 取消 | 中止初始化 → 停止 |
 
-**如果 `logs/` 目录存在且有文件**，告知用户："发现现有日志，将保留它们。"
+**如果 `dev-*.log` 文件存在**，告知用户："发现现有日志，将保留它们。"
 
 ⛔ **门控**: 在用户选择选项前不得继续（针对 features.json）
 
@@ -48,35 +46,33 @@
 
 1. **创建 `features.json`**: `[]`（空数组）
 
-2. **创建 `logs/` 目录**（如果不存在）: `mkdir -p logs`
-
-3. **创建 `logs/init.log`** 并写入头部:
+2. **创建 `dev-YYYY-MM-DD.log`**（YYYY-MM-DD 为当天日期）并写入头部:
 ```
 === Agent 初始化日志 ===
 初始化时间: [时间戳]
 格式: 增强结构化格式（多段落日志）
 
 日志类型参考:
-- [Init] - 框架初始化（本文件）
-- [Explore] - 代码库探索（在任务日志中）
-- [Pending] - 任务规划（在任务日志中）
-- [TDD-Red] - 红灯确认（在任务日志中）
-- [TDD-Green] - 绿灯验证（在任务日志中）
-- [Completed] - 任务完成（在任务日志中）
+- [Init] - 框架初始化
+- [Explore] - 代码库探索
+- [Pending] - 任务规划
+- [TDD-Red] - 红灯确认
+- [TDD-Green] - 绿灯验证
+- [Completed] - 任务完成
 - [Fix/Refactor/Optimization/Design/Test/Docs/Config] - 手动日志
 
-每个任务有独立日志文件: logs/task-{id}.log
+所有条目按时间序写入本文件，通过 [Phase] Task N: 标签区分来源
 ---
 ```
 
-4. **追加初始日志条目到 `logs/init.log`**:
+4. **追加初始日志条目到 `dev-YYYY-MM-DD.log`**:
 ```
 [ISO 时间戳] [Init] Agent 框架设置
 ├─ Context: 用户初始化 Agent 进行结构化开发工作流
-├─ Files: features.json（已创建）| logs/（目录已创建）| logs/init.log（本文件）
-├─ Changes: 设置任务隔离日志架构
-├─ Tech: JSON 用于任务存储 | 独立日志文件提升 token 效率
-├─ Decision: 任务级日志隔离 → 更好的 token 管理，更易恢复上下文
+├─ Files: features.json（已创建）| dev-YYYY-MM-DD.log（本文件）
+├─ Changes: 设置统一日志架构
+├─ Tech: JSON 用于任务存储 | 统一日志文件简化管理
+├─ Decision: 统一日志架构 → 简化管理，结构化标签保证可检索
 └─ Result: 框架准备就绪，可定义项目目标和任务分解
 ---
 ```
@@ -146,17 +142,17 @@
 
 6. **向用户展示任务列表** 并请求确认
 7. ⛔ **等待用户确认** 后再写入 features.json
-8. **追加任务分解日志到 `logs/init.log`**
+8. **追加任务分解日志到 `dev-YYYY-MM-DD.log`**
 
 ### 步骤 4: 最终总结
 
-追加最终初始化总结到 `logs/init.log`:
+追加最终初始化总结到 `dev-YYYY-MM-DD.log`:
 ```
 [ISO 时间戳] [Init] 初始化完成 - 准备执行
 ├─ Context: 框架设置完成，所有状态文件已创建
-├─ Files: features.json（N 个任务）| logs/init.log（3 条日志）| logs/ 目录就绪
+├─ Files: features.json（N 个任务）| dev-YYYY-MM-DD.log（3 条日志）
 ├─ Changes: 完成初始化 - 任务已定义，日志框架已设置
-├─ Tech: 任务隔离日志架构 | 基于 JSON 的任务管理
+├─ Tech: 统一日志架构 | 基于 JSON 的任务管理
 ├─ Decision: 所有任务初始 passes:false → 需验证后才能标记完成
 └─ Result: 系统准备好执行 /plan-next | 所有 N 个任务待处理
 ---
@@ -169,13 +165,11 @@
 
 已创建:
 • features.json - [N] 个任务就绪（全部 passes: false）
-• logs/ - 任务隔离日志目录
-• logs/init.log - [3] 条初始化日志已记录
+• dev-YYYY-MM-DD.log - [3] 条初始化日志已记录
 
 日志架构:
-→ 每个任务将获得 logs/task-{id}.log，包含5个详细阶段日志
-→ Token 高效：只读取需要的日志
-→ 无全局日志文件 - 完全隔离
+→ 所有日志统一写入 dev-YYYY-MM-DD.log
+→ 通过 [Phase] Task N: 标签区分来源，精准检索
 
 下一步:
 • 运行 /plan-next 开始第一个任务

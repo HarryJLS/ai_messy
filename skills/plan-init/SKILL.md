@@ -1,6 +1,6 @@
 ---
 name: plan-init
-description: 初始化 Agent 框架，创建 features.json 状态文件和 logs/ 日志目录。当用户说 "/plan-init"、"初始化项目"、"开始新项目"、"创建任务列表"、"设置 Agent"、"初始化任务" 时触发。用于启动新的结构化开发工作流。
+description: 初始化 Agent 框架，创建 features.json 状态文件和开发日志文件。当用户说 "/plan-init"、"初始化项目"、"开始新项目"、"创建任务列表"、"设置 Agent"、"初始化任务" 时触发。用于启动新的结构化开发工作流。
 ---
 
 # Plan Init
@@ -12,18 +12,16 @@ description: 初始化 Agent 框架，创建 features.json 状态文件和 logs/
 - **抗遗忘**：通过读取相关任务日志恢复上下文
 - **抗范围蔓延**：JSON 定义范围，日志提供详细上下文
 - **可演进**：AI 可在执行前优化方案
-- **隔离性**：每个任务的日志独立，便于精准检索
+- **统一日志**：所有条目按时间序写入单一文件，通过结构化标签区分来源
 - **精准执行**：只改该改的，不碰不该碰的
 - **资深开发视角**：考虑复用性、扩展性、健壮性
 
 ## 核心文件
 
-| 文件/目录 | 用途 |
-|----------|------|
+| 文件 | 用途 |
+|------|------|
 | `features.json` | 任务的单一事实来源 |
-| `logs/` | 任务隔离日志目录 |
-| `logs/init.log` | 初始化日志 |
-| `logs/task-{id}.log` | 单个任务日志 |
+| `dev-YYYY-MM-DD.log` | 统一开发日志（项目根目录，YYYY-MM-DD 为初始化日期） |
 
 ## 协议
 
@@ -40,7 +38,7 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 
 ### 步骤 1: 检查现有文件
 
-检查项目根目录的 `features.json` 和 `logs/` 目录。
+检查项目根目录的 `features.json` 和 `dev-*.log` 文件。
 
 **如果 `features.json` 存在**，询问用户：
 
@@ -51,7 +49,7 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 | 合并 | 保留现有，仅添加非重复项 |
 | 取消 | 中止初始化 |
 
-**如果 `logs/` 目录存在且有文件**，告知用户："发现现有日志，将保留它们。"
+**如果 `dev-*.log` 文件存在**，告知用户："发现现有日志，将保留它们。"
 
 ⛔ **门控**: 在用户选择选项前不得继续
 
@@ -60,8 +58,7 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 确认需要创建的文件清单（实际写入在步骤 4 执行）：
 
 1. `features.json` — 空数组 `[]`
-2. `logs/` 目录
-3. `logs/init.log` — 初始化日志头部 + 框架设置日志条目
+2. `dev-YYYY-MM-DD.log` — 初始化日志头部 + 框架设置日志条目（YYYY-MM-DD 为当天日期）
 
 ### 步骤 3: 获取项目目标
 
@@ -185,8 +182,7 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 1. **创建框架文件**
 
    - 创建 `features.json`: `[]`（空数组）
-   - 创建 `logs/` 目录: `mkdir -p logs`
-   - 创建 `logs/init.log` 并写入头部:
+   - 创建 `dev-YYYY-MM-DD.log`（YYYY-MM-DD 为当天日期）并写入头部:
      ```
      === Agent 初始化日志 ===
      初始化时间: [时间戳]
@@ -201,17 +197,17 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
      - [Completed] - 任务完成
      - [Fix/Refactor/Optimization/Design/Test/Docs/Config] - 手动日志
 
-     每个任务有独立日志文件: logs/task-{id}.log
+     所有条目按时间序写入本文件，通过 [Phase] Task N: 标签区分来源
      ---
      ```
-   - 追加框架设置日志条目到 `logs/init.log`:
+   - 追加框架设置日志条目到 `dev-YYYY-MM-DD.log`:
      ```
      [ISO 时间戳] [Init] Agent 框架设置
      ├─ Context: 用户初始化 Agent 进行结构化开发工作流
-     ├─ Files: features.json（已创建）| logs/（目录已创建）| logs/init.log（本文件）
-     ├─ Changes: 设置任务隔离日志架构
-     ├─ Tech: JSON 用于任务存储 | 独立日志文件提升 token 效率
-     ├─ Decision: 任务级日志隔离 → 更好的 token 管理，更易恢复上下文
+     ├─ Files: features.json（已创建）| dev-YYYY-MM-DD.log（本文件）
+     ├─ Changes: 设置统一日志架构
+     ├─ Tech: JSON 用于任务存储 | 统一日志文件简化管理
+     ├─ Decision: 统一日志架构 → 简化管理，结构化标签保证可检索
      └─ Result: 框架准备就绪，可定义项目目标和任务分解
      ---
      ```
@@ -234,7 +230,7 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
    ]
    ```
 
-3. **追加任务分解日志到 `logs/init.log`**
+3. **追加任务分解日志到 `dev-YYYY-MM-DD.log`**
     ```
     [ISO 时间戳] [Init] 任务分解完成
     ├─ Context: 用户确认任务列表
@@ -244,13 +240,13 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
     ---
     ```
 
-4. **追加最终初始化总结到 `logs/init.log`**:
+4. **追加最终初始化总结到 `dev-YYYY-MM-DD.log`**:
     ```
     [ISO 时间戳] [Init] 初始化完成 - 准备执行
     ├─ Context: 框架设置完成，所有状态文件已创建
-    ├─ Files: features.json（N 个任务）| logs/init.log（3 条日志）| logs/ 目录就绪
+    ├─ Files: features.json（N 个任务）| dev-YYYY-MM-DD.log（3 条日志）
     ├─ Changes: 完成初始化 - 任务已定义，日志框架已设置
-    ├─ Tech: 任务隔离日志架构 | 基于 JSON 的任务管理
+    ├─ Tech: 统一日志架构 | 基于 JSON 的任务管理
     ├─ Decision: 所有任务初始 passes:false → 需验证后才能标记完成
     └─ Result: 系统准备好执行 /plan-next | 所有 N 个任务待处理
     ---
@@ -268,13 +264,11 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 
 已创建:
 • features.json - [N] 个任务已写入（全部 passes: false）
-• logs/ - 任务隔离日志目录
-• logs/init.log - 初始化日志已记录
+• dev-YYYY-MM-DD.log - 初始化日志已记录
 
 日志架构:
-→ 每个任务将获得 logs/task-{id}.log，包含5个详细阶段日志
-→ Token 高效：只读取需要的日志
-→ 无全局日志文件 - 完全隔离
+→ 所有日志统一写入 dev-YYYY-MM-DD.log
+→ 通过 [Phase] Task N: 标签区分来源，精准检索
 
 下一步:
 • 运行 /plan-next 开始第一个任务
