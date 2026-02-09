@@ -1,6 +1,6 @@
 ---
 name: dev-team
-description: 智能开发团队编排，使用 Agent Team 协调五个 skill 的全流程自动化执行。当用户说 "/dev-team"、"启动开发团队"、"团队开发"、"全流程开发" 时触发。从方案预研到代码交付一站式完成。
+description: 智能开发团队编排，使用 Agent Team 协调五个 skill 的全流程自动化执行。当用户说 "/dev-team" 时触发。从方案预研到代码交付一站式完成。
 ---
 
 # Dev Team - 智能开发团队编排
