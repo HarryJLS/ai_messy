@@ -44,16 +44,17 @@ Multi-agent team that orchestrates the full development pipeline automatically:
 
 | Role | Agent | Responsibility |
 |------|-------|----------------|
-| lead | self | Orchestration, user communication, decision relay |
-| architect | general-purpose (dontAsk) | Plan preview + project init |
+| lead | self | Plan preview, project init, orchestration, user communication, decision |
 | developer | general-purpose (bypassPermissions) | TDD task execution loop |
 | polisher | general-purpose (bypassPermissions) | Code simplification + style fix |
 
-**Pipeline:** Plan Preview → Project Init → TDD Dev Loop → Code Polish → Report
+**Pipeline:** Plan Preview (lead) → Project Init (lead) → TDD Dev Loop (developer) → Code Polish (polisher) → Report
+
+**Key design: lead owns decision phases.** Lead executes `/plan-preview` and `/plan-init` directly, interacting with user without relay. Team (developer, polisher) is only created when entering the dev phase.
 
 **Cross-project reference support:**
 - Phase 0: lead identifies reference project path from user input
-- Phase 1: architect explores reference project code, writes key file paths into `task.md` references
+- Phase 1: lead explores reference project code, writes key file paths into `task.md` references
 - Phase 3: developer reads references automatically via plan-next's reference learning flow (locate → analyze → trace calls → adapt)
 
 **Auto-resume:** Re-running `/dev-team` detects existing files (`task.md`, `features.json`) and skips to the appropriate phase.
