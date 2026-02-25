@@ -47,8 +47,10 @@ Multi-agent team that orchestrates the full development pipeline automatically:
 | lead | self | Plan preview, project init, orchestration, user communication, decision |
 | developer | general-purpose (bypassPermissions) | TDD task execution loop |
 | polisher | general-purpose (bypassPermissions) | Code simplification + style fix |
+| reviewer | feature-dev:code-reviewer | Production CR with full code context |
+| blind-reviewer | feature-dev:code-reviewer | Zero-context blind CR based on PR description + diff |
 
-**Pipeline:** Plan Preview (lead) → Project Init (lead) → TDD Dev Loop (developer) → Code Polish (polisher) → Report
+**Pipeline:** Plan Preview (lead) → Project Init (lead) → TDD Dev Loop (developer) → Code Polish (polisher) → Dual Code Review (reviewer + blind-reviewer) → Report
 
 **Key design: lead owns decision phases.** Lead executes `/plan-preview` and `/plan-init` directly, interacting with user without relay. Team (developer, polisher) is only created when entering the dev phase.
 
