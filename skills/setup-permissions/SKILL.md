@@ -51,7 +51,22 @@ description: 为 Claude Code 配置 settings.local.json 权限白名单，免去
       "Bash(wc *)",
       "Bash(head *)",
       "Bash(tail *)",
-      "WebSearch"
+      "WebSearch",
+      "mcp__feishu-mcp__create_feishu_document",
+      "mcp__feishu-mcp__get_feishu_document_info",
+      "mcp__feishu-mcp__get_feishu_document_blocks",
+      "mcp__feishu-mcp__search_feishu_documents",
+      "mcp__feishu-mcp__get_feishu_whiteboard_content",
+      "mcp__feishu-mcp__update_feishu_block_text",
+      "mcp__feishu-mcp__batch_create_feishu_blocks",
+      "mcp__feishu-mcp__delete_feishu_document_blocks",
+      "mcp__feishu-mcp__get_feishu_image_resource",
+      "mcp__feishu-mcp__upload_and_bind_image_to_block",
+      "mcp__feishu-mcp__create_feishu_table",
+      "mcp__feishu-mcp__fill_whiteboard_with_plantuml",
+      "mcp__feishu-mcp__get_feishu_root_folder_info",
+      "mcp__feishu-mcp__get_feishu_folder_files",
+      "mcp__feishu-mcp__create_feishu_folder"
     ]
   }
 }
@@ -69,4 +84,5 @@ description: 为 Claude Code 配置 settings.local.json 权限白名单，免去
 • Edit / Write - 文件读写
 • Bash - git, go, mvn, gradle, npm, python 等常用命令
 • WebSearch - 网页搜索
+• 飞书 MCP - 文档创建/编辑/搜索、白板、图片、表格、文件夹管理
 ```
