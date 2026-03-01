@@ -1,6 +1,6 @@
 ---
 name: git-quick
-description: 快捷 pull/commit/push 一键完成。自动生成简洁 commit message。当用户说 "/git-quick"、"快速提交"、"提交推送"、"quick commit" 时触发。
+description: 快捷 pull/commit/push/checkout 一键完成。自动生成简洁 commit message。当用户说 "/git-quick"、"快速提交"、"提交推送"、"quick commit"、"拉取分支"、"切换分支" 时触发。
 ---
 
 # Git Quick
@@ -16,6 +16,7 @@ description: 快捷 pull/commit/push 一键完成。自动生成简洁 commit me
 | pull/拉取 | 仅 **Pull** |
 | commit/提交 | 仅 **Commit** |
 | push/推送 | 仅 **Push** |
+| checkout/切换分支/拉取分支 + 分支名 | **Checkout** |
 | 无明确指令 / quick / 一键 | **Pull → Commit → Push** 全流程 |
 
 ## Pull
@@ -26,6 +27,44 @@ git pull --rebase
 
 - 成功 → 继续下一步（或结束）
 - 冲突 → **停止**，输出冲突文件列表，提示用户手动解决
+
+## Checkout
+
+拉取并切换到指定分支。
+
+### 步骤
+
+1. **获取最新远程信息**：
+   ```bash
+   git fetch origin
+   ```
+
+2. **判断分支位置**：
+   ```bash
+   git branch -a | grep <分支名>
+   ```
+
+3. **切换分支**：
+   - 本地已有 → `git checkout <分支名>`
+   - 仅远程有 → `git checkout -b <分支名> origin/<分支名>`
+   - 都不存在 → 提示用户确认是否新建：`git checkout -b <分支名>`
+
+4. **拉取最新代码**（非新建分支时）：
+   ```bash
+   git pull --rebase
+   ```
+
+### 输出格式
+
+```
+[Checkout] ✓ 已切换到分支 <分支名>（来源: origin/<分支名>）
+```
+
+或新建时：
+
+```
+[Checkout] ✓ 已新建并切换到分支 <分支名>
+```
 
 ## Commit
 
