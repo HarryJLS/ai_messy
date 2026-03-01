@@ -101,7 +101,14 @@ git log --oneline -5
 
 ### 3. Commit Message 规则
 
-格式：`<type>: <描述>`
+格式：
+
+```
+<type>: <描述>
+
+- 关键改动点 1
+- 关键改动点 2
+```
 
 **Type 选择：**
 
@@ -115,20 +122,30 @@ git log --oneline -5
 | chore | 构建、配置、依赖等杂项 |
 | style | 格式调整（不影响逻辑） |
 
-**原则：**
-- subject 行 ≤ 50 字符，仅一行
+**Subject 规则：**
+- subject 行 ≤ 72 字符，仅一行
 - 具体但简短：`fix: UserService.login NPE` 而非 `fix: 修复了一个bug`
 - 看 diff 主要改动决定 type
 - 语言跟随项目已有 commit（中文项目用中文，英文项目用英文）
-- 不加 body，除非用户明确要求
-- Co-Authored-By 行不计入 50 字符限制
+- Co-Authored-By 行不计入字符限制
+
+**Body 规则：**
+- 默认添加 body，subject 与 body 之间空一行
+- 用 `- ` bullet list 列出关键改动（1-3 条）
+- 每条说明"改了什么"而非"怎么改的"
+- 如果变更很小（单文件单处修改），可以省略 body
 
 ### 4. 确认并提交
 
 向用户展示生成的 commit message，等待确认：
 
 ```
-提交信息: feat: 添加用户登录验证
+提交信息:
+feat: 添加用户登录验证
+
+- UserService 新增 login 方法，支持账号密码校验
+- 添加登录失败重试次数限制（最多 5 次）
+
 确认提交？(Y/n)
 ```
 
@@ -136,9 +153,15 @@ git log --oneline -5
 
 ```bash
 git add -A  # 如果用户同意暂存所有
-git commit -m "<message>
+git commit -m "$(cat <<'EOF'
+feat: 添加用户登录验证
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+- UserService 新增 login 方法，支持账号密码校验
+- 添加登录失败重试次数限制（最多 5 次）
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+EOF
+)"
 ```
 
 **注意：使用 HEREDOC 格式传递多行 commit message。**
