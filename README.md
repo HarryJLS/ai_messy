@@ -9,7 +9,7 @@ Claude Code Plugin — AI Agent 工作流和开发指南技能合集（中文）
 /plugin marketplace add HarryJLS/ai_messy_project
 
 # 2. 安装插件
-/plugin install ai_messy_project
+/plugin install ai-messy-project@ai_messy_project
 ```
 
 安装后即可通过 `/skill-name` 命令调用所有技能。
