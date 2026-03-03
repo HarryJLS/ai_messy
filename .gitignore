@@ -140,10 +140,9 @@ credentials.json
 secrets.yaml
 
 # =========================
-# 飞书 MCP 缓存
+# 缓存文件
 # =========================
-scope_version_cache.json
-tenant_token_cache.json
+*_cache.json
 
 # =========================
 # 日志和临时文件
