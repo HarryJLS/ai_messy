@@ -219,20 +219,29 @@ func Test_MethodName(t *testing.T) {
 
 ### Java Spock Specific
 
-```groovy
-def "测试正常流程_用户成功下单"() {
-    given: "准备测试数据 - 创建有效的订单请求"
-    def input = new InputDTO(...)
+> **优先原则：当存在多个测试场景时，优先使用 `@Unroll` + `where` 数据表枚举，而非写多个独立测试方法。** 这样更简洁、可读性更好、易于扩展新场景。
 
-    and: "模拟依赖行为 - 库存服务返回充足库存"
-    mockService.method(_) >> expectedValue
+```groovy
+@Unroll
+def "测试下单流程_#scenario"() {
+    given: "准备测试数据"
+    def input = new InputDTO(userId: userId, amount: amount)
+
+    and: "模拟依赖行为"
+    mockService.checkInventory(_) >> hasInventory
 
     when: "执行被测方法 - 调用下单接口"
-    def result = target.method(input)
+    def result = target.placeOrder(input)
 
-    then: "验证结果 - 订单创建成功"
-    result == expected
-    1 * mockService.save(_)  // 验证保存方法被调用 1 次
+    then: "验证结果"
+    result.success == expectedSuccess
+    result.status == expectedStatus
+
+    where: "枚举多种下单场景"
+    scenario       | userId | amount  | hasInventory || expectedSuccess | expectedStatus
+    "正常下单"     | 1L     | 100.00  | true         || true            | "CREATED"
+    "库存不足"     | 1L     | 100.00  | false        || false           | "OUT_OF_STOCK"
+    "零金额订单"   | 1L     | 0       | true         || false           | "INVALID_AMOUNT"
 }
 ```
 

@@ -31,6 +31,10 @@ class XxxServiceTest extends Specification {
 }
 ```
 
+## 1.1 优先原则
+
+> **多场景测试优先使用 `where` 数据驱动：** 当同一个方法需要测试多种输入/输出组合时，优先使用 `@Unroll` + `where` 数据表枚举所有场景，而非为每个场景写独立的测试方法。这样更简洁、可读性更好、易于扩展新场景。仅当不同场景的 Mock 行为或验证逻辑差异很大时，才拆分为独立方法。
+
 ## 2. 测试方法结构 (given-when-then)
 
 ```groovy
@@ -313,27 +317,31 @@ class OrderServiceTest extends Specification {
         target.paymentService = paymentService
     }
 
-    def "测试创建订单-正常流程"() {
+    @Unroll
+    def "测试创建订单_#scenario"() {
         given: "准备订单数据"
-        def orderDTO = new OrderDTO(userId: 1L, amount: 100.00)
+        def orderDTO = new OrderDTO(userId: userId, amount: amount)
 
         and: "模拟依赖行为"
         orderRepository.save(_) >> { Order order ->
             order.id = 1L
             return order
         }
-        paymentService.charge(_, _) >> true
+        paymentService.charge(_, _) >> chargeResult
 
         when: "创建订单"
         def result = target.createOrder(orderDTO)
 
-        then: "验证订单创建成功"
-        result.id == 1L
-        result.status == "CREATED"
+        then: "验证订单创建结果"
+        result.status == expectedStatus
+        saveCount * orderRepository.save(_)
+        chargeCount * paymentService.charge(_, _)
 
-        and: "验证调用链"
-        1 * orderRepository.save(_)
-        1 * paymentService.charge(1L, 100.00)
+        where: "多种下单场景"
+        scenario       | userId | amount  | chargeResult || expectedStatus | saveCount | chargeCount
+        "正常下单"     | 1L     | 100.00  | true         || "CREATED"      | 1         | 1
+        "小额订单"     | 2L     | 0.01    | true         || "CREATED"      | 1         | 1
+        "大额订单"     | 1L     | 9999.99 | true         || "CREATED"      | 1         | 1
     }
 
     def "测试订单状态转换"() {
