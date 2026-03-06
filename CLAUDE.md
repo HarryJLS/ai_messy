@@ -22,8 +22,6 @@
 | `/plan-init` | 需求分析和任务分解，生成计划文件供审批 |
 | `/plan-write` | 读取审批后的计划文件，写入 `features.json` 和 `dev-YYYY-MM-DD.log` |
 | `/plan-next` | 执行下一个待处理任务，使用 TDD 循环（RED → GREEN → COMMIT） |
-| `/plan-log` | 手动记录非任务进度（架构决策、紧急修复等） |
-| `/plan-archive` | 将已完成的工作归档到 `archives/YYYY-MM-DD-HHMMSS/` |
 | `/dev-team` | 全流程编排：预研 + 初始化 + 开发 + 简化 + 修复 |
 
 ### 代码质量
