@@ -251,18 +251,20 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
    ```
    📝 任务拆解：
 
-   任务 1: [任务标题]
+   任务 1: [任务标题] [complexity: small]
    - 做什么：[具体描述，包含业务背景]
    - 为什么：[这个任务解决什么问题]
    - 改哪里：[精确到文件路径和方法名]
    - 怎么改：[实现思路，关键步骤，伪代码级别]
    - 参考实现：[项目中可参考的类似代码路径]
    - 验收标准：[可执行的验证步骤]
+   - 依赖：无
 
-   任务 2: [任务标题]
+   任务 2: [任务标题] [complexity: medium]
+   - 依赖：任务 1
    ...
 
-   任务间依赖：[如有]
+   任务间依赖关系：1 → 2 → 3
    预估总任务数：[N] 个
    ```
 
@@ -346,6 +348,8 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 [
   {
     "id": "1",
+    "dependsOn": [],
+    "complexity": "small|medium|large|trivial",
     "category": "core|ui|feature|optimization|bugfix|refactor|middleware",
     "description": "任务描述（做什么 + 为什么 + 业务背景）",
     "steps": ["步骤1（精确到文件:方法）", "步骤2"],

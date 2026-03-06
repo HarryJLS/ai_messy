@@ -1,6 +1,6 @@
 ---
 name: plan-next
-description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/plan-next"、"执行下一个任务"、"继续任务"、"开始开发" 时触发。必须先运行 /plan-init 创建 features.json。执行 READ → EXPLORE → PLAN → RED → IMPLEMENT → GREEN → COMMIT 七阶段流程。
+description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/plan-next"、"执行下一个任务"、"继续任务"、"开始开发" 时触发。必须先运行 /plan-init 创建 features.json。执行 READ → EXPLORE → PLAN → RED → IMPLEMENT → GREEN → REFACTOR → COMMIT 八阶段流程。
 ---
 
 # Plan Next
@@ -11,6 +11,13 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 
 - **一次一个任务**，仅在验证后设置 `passes: true`
 - **TDD 强制**：必须先看到 RED 再看 GREEN
+- **TDD 弹性**：根据任务 category 调整严格度
+  | category | TDD 模式 |
+  |----------|----------|
+  | core / feature | 完整 TDD（RED → GREEN → REFACTOR 强制） |
+  | optimization / bugfix | 标准 TDD（RED → GREEN → REFACTOR） |
+  | refactor | 先确保现有测试通过，重构后验证不变 |
+  | config / docs / middleware | 简化模式：跳过 RED，直接实现 + 验证 |
 - **日志用于恢复**：每条日志必须能在新会话中恢复上下文
 - **参考方法必查**：`references` 字段的方法必须在 PLAN 阶段查找并学习
 - **数据样例必验**：`dataSamples` 字段必须在 RED 阶段基于样例编写测试
@@ -34,7 +41,7 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 
 ```
 [时间戳] [阶段] Task N: 一句话概述
-├─ 状态: exploring|planning|red|green|done
+├─ 状态: exploring|planning|red|green|refactoring|done
 ├─ 决策: 关键决策
 ├─ 文件: file1.ts, file2.ts
 ├─ 待确认问题: N 个
@@ -81,7 +88,13 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 ## 阶段 3: PLAN
 
 1. 查看任务的 `steps`, `acceptance`, `test`, `boundary` 字段
-2. **参考资源查找**（如果有 `references` 或 `dataSamples`）：
+2. 如果任务包含 `implementationGuide` 字段，优先参考：
+   - `targetFiles`：定位要修改的精确文件和方法
+   - `approach`：理解预研阶段确定的实现思路
+   - `referenceCode`：找到可参考的现有实现
+   - `dataFlow`：理解数据流向
+   - `keyInterfaces`：确认需要实现/调用的接口
+3. **参考资源查找**（如果有 `references` 或 `dataSamples`）：
 
 ### 3.1: 参考方法学习流程
 
@@ -141,6 +154,8 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 
 ⚠️ **必须先看到测试失败**
 
+**跳过条件**：如果任务 category 为 `config / docs / middleware`（TDD 弹性简化模式），跳过 RED 阶段，直接进入 IMPLEMENT。
+
 1. 根据 `test` 字段选择方式：`unit/integration/e2e` → 调用 `/unit-test`
 2. 基于 `dataSamples` 编写测试用例
 3. 运行测试，**确认失败**
@@ -191,7 +206,19 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 3. 验证 `dataSamples` 和 `references` 使用正确
 4. 边界验证：只改了该改的
 
-## 阶段 7: COMMIT
+## 阶段 7: REFACTOR 🔧
+
+在测试保持绿色的前提下优化刚写的代码：
+
+1. 消除重复代码（DRY）
+2. 提取过长方法为更小的职责单一方法
+3. 改进命名（变量、方法、类）
+4. 简化条件表达式
+5. 运行测试 → 确认仍然全部通过
+
+⚠️ REFACTOR 只优化结构，不改变行为。如果测试变红，立即回退。
+
+## 阶段 8: COMMIT
 
 1. 设置 `passes: true` 在 features.json
 2. 写最终日志
@@ -200,7 +227,7 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 
 ## 成功标准
 
-1. ✅ 测试通过（RED → GREEN）
+1. ✅ 测试通过（RED → GREEN → REFACTOR）
 2. ✅ `acceptance` 全部满足
 3. ✅ `passes: true` 已设置
 4. ✅ `dev-YYYY-MM-DD.log` 中包含该任务的 3-4 条日志
@@ -220,7 +247,8 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 | exploring | 继续分析或进入 planning |
 | planning | 写测试，进入 red |
 | red | 写实现代码 |
-| green | 检查 acceptance，提交 |
+| green | 重构优化，进入 refactoring |
+| refactoring | 检查 acceptance，提交 |
 | done | /plan-next |
 
 ## 完成后输出

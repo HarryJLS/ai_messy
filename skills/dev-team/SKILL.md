@@ -55,8 +55,9 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 | 有 `task.md`、无计划文件（`~/.claude/plans/*.md`）、无 `features.json` | 阶段 2（plan-init + plan-write） |
 | 有 `task.md`、有计划文件、无 `features.json` | 阶段 2b（仅 plan-write） |
 | 有 `features.json`、有未完成任务 | 阶段 3（跳过初始化） |
-| 有 `features.json`、所有 `passes: true`、无 polisher 完成标记 | 阶段 4（仅优化） |
-| 有 `features.json`、所有 `passes: true`、polisher 已完成（dev log 中有 `[polisher] 完成` 记录） | 阶段 5（CR） |
+| 有 `features.json`、所有 `passes: true`、dev log 中无 `[Verification-Done]` 标记 | 阶段 3.5（全量验证） |
+| 有 `features.json`、所有 `passes: true`、dev log 中有 `[Verification-Done]` 标记、无 `[Polisher-Done]` 标记 | 阶段 4（仅优化） |
+| 有 `features.json`、所有 `passes: true`、dev log 中有 `[Polisher-Done]` 标记 | 阶段 5（CR） |
 
 4. 根据跳入点：
    - 若进入阶段 1 或 2：lead 直接执行，无需创建团队（团队在阶段 3 才需要）
@@ -216,6 +217,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 | Lint | checkstyle/spotbugs | `go vet ./...` | `npm run lint` | `ruff check .` |
 | Test | `mvn test` | `go test ./...` | `npm test` | `pytest` |
 | Security | 硬编码扫描 | 硬编码扫描 | `npm audit` | 硬编码扫描 |
+| Diff | `git diff --stat` | `git diff --stat` | `git diff --stat` | `git diff --stat` |
 
 2. 输出验证报告：
 
@@ -226,11 +228,14 @@ Build:    [PASS/FAIL]
 Lint:     [PASS/FAIL] (X warnings)
 Test:     [PASS/FAIL] (X/Y passed)
 Security: [PASS/FAIL] (X issues)
+Diff:     [X files changed, +Y/-Z lines]（检查是否有意外修改的文件）
 
 结论: [通过/不通过]
 ```
 
-3. 处理结果：
+3. 将验证报告追加到 dev log，并写入 `[Verification-Done]` 标记
+
+4. 处理结果：
 
 | 结论 | lead 处理 |
 |------|----------|
@@ -247,6 +252,14 @@ spawn polisher（`subagent_type: general-purpose`, `mode: bypassPermissions`, `t
 ```
 请依次执行代码优化：
 
+第零步：De-Sloppify 检查
+- 检测 AI 过度工程化的模式：
+  - 测试中是否测试了语言特性而非业务逻辑（如测试 null 参数构造函数而非业务规则）
+  - 是否有过度防守的类型检查（内部方法间传递已校验的参数又重复校验）
+  - 是否有不必要的 try-catch（catch 后只是重新抛出）
+  - 是否有过度抽象（只用了一次的 interface/abstract class）
+- 发现后直接清理，SendMessage 给 lead 报告清理项
+
 第一步：调用 Skill("code-simplifier")
 - 先用 git diff 确定本次开发修改的文件范围，将文件列表作为优化目标
 - 完成后 SendMessage 通知 lead
@@ -254,7 +267,8 @@ spawn polisher（`subagent_type: general-purpose`, `mode: bypassPermissions`, `t
 第二步：调用 Skill("code-fixer")
 - 对代码进行规范修复（基于 git diff）
 - 需确认的改动（CONFIRM 类）：SendMessage 给 lead 说明改动列表，等待回复
-- 完成后 SendMessage 通知 lead，报告优化全部完成
+- 完成后在 dev log 中写入 `[Polisher-Done]` 标记
+- SendMessage 通知 lead，报告优化全部完成
 ```
 
 **lead 验证：**
