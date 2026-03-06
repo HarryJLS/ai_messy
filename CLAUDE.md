@@ -19,7 +19,8 @@
 | 命令 | 用途 |
 |------|------|
 | `/plan-preview` | 预研技术方案，输出 `task.md` 供 `/plan-init` 使用 |
-| `/plan-init` | 初始化项目，创建 `features.json` 和 `dev-YYYY-MM-DD.log` |
+| `/plan-init` | 需求分析和任务分解，生成计划文件供审批 |
+| `/plan-write` | 读取审批后的计划文件，写入 `features.json` 和 `dev-YYYY-MM-DD.log` |
 | `/plan-next` | 执行下一个待处理任务，使用 TDD 循环（RED → GREEN → COMMIT） |
 | `/plan-log` | 手动记录非任务进度（架构决策、紧急修复等） |
 | `/plan-archive` | 将已完成的工作归档到 `archives/YYYY-MM-DD-HHMMSS/` |
@@ -66,13 +67,13 @@
 
 | 角色 | Agent | 职责 |
 |------|-------|------|
-| lead | self | 方案预研、项目初始化、编排协调、用户沟通、决策 |
+| lead | self | 方案预研、任务分解、计划写入、编排协调、用户沟通、决策 |
 | developer | general-purpose (bypassPermissions) | TDD 任务执行循环 |
 | polisher | general-purpose (bypassPermissions) | 代码简化 + 风格修复 |
 | reviewer | feature-dev:code-reviewer | 生产级 CR，拥有完整代码上下文 |
 | blind-reviewer | feature-dev:code-reviewer | 零上下文盲审，仅基于 PR 描述 + diff |
 
-**流水线：** 方案预研（lead）→ 项目初始化（lead）→ TDD 开发循环（developer）→ 代码打磨（polisher）→ 双重代码审查（reviewer + blind-reviewer）→ 报告
+**流水线：** 方案预研（lead）→ 任务分解（lead）→ 计划写入（lead）→ TDD 开发循环（developer）→ 代码打磨（polisher）→ 双重代码审查（reviewer + blind-reviewer）→ 报告
 
 ## 支持的代码规范
 
