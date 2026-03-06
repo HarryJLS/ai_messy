@@ -67,13 +67,14 @@
 
 | 角色 | Agent | 职责 |
 |------|-------|------|
-| lead | self | 方案预研、任务分解、计划写入、编排协调、用户沟通、决策 |
+| lead | self | 方案预研、任务分解、计划写入、全量验证、编排协调、用户沟通、决策 |
 | developer | general-purpose (bypassPermissions) | TDD 任务执行循环 |
 | polisher | general-purpose (bypassPermissions) | 代码简化 + 风格修复 |
-| reviewer | feature-dev:code-reviewer | 生产级 CR，拥有完整代码上下文 |
-| blind-reviewer | feature-dev:code-reviewer | 零上下文盲审，仅基于 PR 描述 + diff |
+| plan-reviewer | code-architect（项目 agent） | 零上下文方案审查，挑战完整性和合理性 |
+| reviewer | code-reviewer（项目 agent） | 生产级 CR，拥有完整代码上下文 |
+| blind-reviewer | code-reviewer（项目 agent） | 零上下文盲审，仅基于 PR 描述 + diff |
 
-**流水线：** 方案预研（lead）→ 任务分解（lead）→ 计划写入（lead）→ TDD 开发循环（developer）→ 代码打磨（polisher）→ 双重代码审查（reviewer + blind-reviewer）→ 报告
+**流水线：** 方案预研（lead）→ 方案审查（plan-reviewer）→ 任务分解（lead）→ 计划写入（lead）→ TDD 开发循环（developer）→ 全量验证（lead）→ 代码打磨（polisher）→ 双重代码审查（reviewer + blind-reviewer）→ 报告
 
 ## 支持的代码规范
 
