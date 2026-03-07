@@ -71,14 +71,16 @@
 
 | 角色 | Agent | 职责 |
 |------|-------|------|
-| lead | self | 方案预研、任务分解、计划写入、全量验证、编排协调、用户沟通、决策 |
+| lead | self | 方案预研、Research & Reuse、任务分解、计划写入、全量验证、编排协调、用户沟通、决策 |
 | developer | general-purpose (bypassPermissions) | TDD 任务执行循环 |
 | polisher | general-purpose (bypassPermissions) | 代码简化 + 风格修复 |
+| build-fixer | build-error-resolver（项目 agent） | 验证失败时自动修复 build/lint/type 错误 |
 | plan-reviewer | code-architect（项目 agent） | 零上下文方案审查，挑战完整性和合理性 |
 | reviewer | code-reviewer（项目 agent） | 生产级 CR，拥有完整代码上下文 |
 | blind-reviewer | code-reviewer（项目 agent） | 零上下文盲审，仅基于 PR 描述 + diff |
+| security-reviewer | security-reviewer（项目 agent） | 安全审查，聚焦漏洞检测（条件触发） |
 
-**流水线：** 方案预研（lead）→ 方案审查（plan-reviewer）→ 任务分解（lead）→ 计划写入（lead）→ TDD 开发循环（developer）→ 全量验证（lead）→ 代码打磨（polisher）→ 双重代码审查（reviewer + blind-reviewer）→ 报告
+**流水线：** Research & Reuse（lead）→ 方案预研（lead）→ 方案审查（plan-reviewer）→ 任务分解（lead）→ 计划写入（lead）→ TDD 开发循环（developer）→ 全量验证 + 自动修复（lead + build-fixer）→ 代码打磨（polisher）→ 多维代码审查（reviewer + blind-reviewer + security-reviewer）→ 报告
 
 ### framework-team（新项目脚手架）
 
@@ -105,11 +107,13 @@
 | lead | self | 需求分析、设计系统生成、UI 方案、任务分解、计划写入、全量验证、编排协调 |
 | developer | general-purpose (bypassPermissions) | 前端组件/页面实现 |
 | polisher | general-purpose (bypassPermissions) | UI/UX 规范检查 + 代码简化 + 风格修复 |
+| build-fixer | build-error-resolver（项目 agent） | 验证失败时自动修复 build/lint/type 错误 |
 | plan-reviewer | code-architect（项目 agent） | 零上下文方案审查，挑战完整性和合理性 |
 | reviewer | code-reviewer（项目 agent） | 前端 CR（引用 code-review/frontend.md） |
 | blind-reviewer | code-reviewer（项目 agent） | 零上下文盲审，仅基于 PR 描述 + diff |
+| security-reviewer | security-reviewer（项目 agent） | 前端安全审查（XSS、敏感数据暴露、CSP，条件触发） |
 
-**流水线：** 设计系统生成（lead）→ UI 方案预研（lead）→ 方案审查（plan-reviewer）→ 任务分解（lead）→ 计划写入（lead）→ 前端开发（developer）→ 全量验证（lead）→ UI/UX 打磨（polisher）→ 双重代码审查（reviewer + blind-reviewer）→ 报告
+**流水线：** 设计系统生成（lead）→ UI 方案预研（lead）→ 方案审查（plan-reviewer）→ 任务分解（lead）→ 计划写入（lead）→ 前端开发（developer）→ 全量验证 + 自动修复（lead + build-fixer）→ UI/UX 打磨（polisher）→ 多维代码审查（reviewer + blind-reviewer + security-reviewer）→ 报告
 
 ## 支持的代码规范
 
