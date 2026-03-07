@@ -44,6 +44,13 @@
 | `/git-quick` | 快捷 pull/commit/push/checkout 一键完成 |
 | `/git-worktree` | Git worktree 管理 |
 
+### 持续学习
+
+| 命令 | 用途 |
+|------|------|
+| `/learn` | 手动提取当前会话中的可复用模式，质量评估后保存 |
+| `/instinct` | 自动观察 + 原子级学习 + 演化（hooks 驱动，项目隔离） |
+
 ### 其他工具
 
 | 命令 | 用途 |
