@@ -1,6 +1,6 @@
 ---
 name: api-verify
-description: 后端 API 运行时验证，启动服务后逐接口发送请求验证状态码和响应结构。可被 /dev-team 阶段 3.5 调用，也可单独使用 /api-verify。
+description: 后端 API 运行时验证，启动服务后逐接口发送请求验证状态码和响应结构。可被 /backend-team 阶段 3.5 调用，也可单独使用 /api-verify。
 ---
 
 # API Verify - 后端 API 运行时验证

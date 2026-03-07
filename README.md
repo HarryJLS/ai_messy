@@ -18,23 +18,21 @@ Claude Code Plugin — AI Agent 工作流和开发指南技能合集（中文）
 
 ## Skills 总览
 
-### Agent 工作流
+### 开发流程
 
 基于 TDD 的结构化开发工作流，支持任务管理、统一日志、上下文恢复。
 
 | 命令 | 用途 |
 |------|------|
 | `/plan-preview` | 方案预研，输出 `task.md` 供 `/plan-init` 使用 |
-| `/plan-init` | 初始化项目，创建 `features.json` 和 `dev-YYYY-MM-DD.log` |
+| `/plan-init` | 需求分析和任务分解，生成计划文件供审批 |
+| `/plan-write` | 读取审批后的计划文件，写入 `features.json` 和 `dev-YYYY-MM-DD.log` |
 | `/plan-next` | 执行下一个任务（TDD: RED → GREEN → COMMIT） |
-| `/plan-log` | 手动记录架构决策、紧急修复等 |
-| `/plan-archive` | 归档已完成工作 |
-| `/dev-team` | 多 Agent 团队全流程编排（预研→初始化→开发→优化→双层 CR） |
 
-**完整流程：**
+**手动执行流程：**
 
 ```
-/plan-preview → /plan-init → /plan-next (循环) → /plan-archive
+/plan-preview → /plan-init → /plan-write → /plan-next (循环)
 ```
 
 **单个任务执行：**
@@ -43,33 +41,17 @@ Claude Code Plugin — AI Agent 工作流和开发指南技能合集（中文）
 READ → EXPLORE → PLAN → RED 🔴 → IMPLEMENT → GREEN 🟢 → COMMIT
 ```
 
-### Dev Team 团队编排
+### Agent 团队编排
 
-`/dev-team` 使用 Agent Team 自动编排全流程，无需手动逐个调用。
+三种团队编排模式，自动编排完整开发流水线，无需手动逐个调用。
 
-**团队角色：**
+| 命令 | 用途 | 适用场景 |
+|------|------|----------|
+| `/backend-team` | 全流程编排：预研 + 初始化 + 开发 + 简化 + 多维 CR | 现有项目开发 |
+| `/framework-team` | 脚手架编排：架构设计 + 脚手架 + TDD + 验证 + CR | 从零搭建新项目 |
+| `/frontend-team` | 前端编排：设计系统 + UI 方案 + 开发 + UI/UX 打磨 + CR | 前端开发（React/Vue3/Vue2） |
 
-| 角色 | Agent | 职责 |
-|------|-------|------|
-| lead | 自身 | 方案预研、项目初始化、编排调度、用户沟通、决策 |
-| developer | general-purpose | TDD 循环开发所有任务 |
-| polisher | general-purpose | 代码简化 + 规范修复 |
-| reviewer | feature-dev:code-reviewer | 上线前正式 CR，有完整代码上下文 |
-| blind-reviewer | feature-dev:code-reviewer | 零上下文盲审，仅依据 PR 描述 + diff |
-
-**执行流水线：**
-
-```
-阶段 0: 初始化与跳入点判断
-阶段 1: 方案预研（lead 执行 /plan-preview）
-阶段 2: 项目初始化（lead 执行 /plan-init）
-阶段 3: 任务开发（developer 循环执行 /plan-next）
-阶段 4: 代码优化（polisher 执行 /code-simplifier + /code-fixer）
-阶段 5: 双层 Code Review（reviewer + blind-reviewer 并行）
-阶段 6: 收尾报告
-```
-
-**特性：** 跨项目代码参考、自动恢复（重新运行自动跳到对应阶段）。
+> 详见下方 [团队编排详情](#团队编排详情) 章节。
 
 ### 代码质量
 
@@ -88,13 +70,13 @@ READ → EXPLORE → PLAN → RED 🔴 → IMPLEMENT → GREEN 🟢 → COMMIT
 | `*.tsx`, `*.jsx` | React/TypeScript 最佳实践 |
 | `*.py` | Python/FastAPI 最佳实践 |
 
-### 测试
+### 测试与验证
 
 | 命令 | 用途 |
 |------|------|
 | `/unit-test` | 自动检测语言，生成符合最佳实践的单元测试 |
-
-支持 Go（Mockey + Testify）和 Java（Spock / JUnit 5）。
+| `/e2e-test` | 前端 E2E 验证（启动 Dev Server → Playwright 逐页面验证 → 截图 → 报告） |
+| `/api-verify` | 后端 API 运行时验证（启动服务 → 逐接口验证状态码和响应结构 → 报告） |
 
 ### Git 工具
 
@@ -102,6 +84,13 @@ READ → EXPLORE → PLAN → RED 🔴 → IMPLEMENT → GREEN 🟢 → COMMIT
 |------|------|
 | `/git-quick` | 快捷 pull/commit/push/checkout 一键完成 |
 | `/git-worktree` | Git worktree 创建/删除/列出 |
+
+### 持续学习
+
+| 命令 | 用途 |
+|------|------|
+| `/learn` | 手动提取当前会话中的可复用模式，质量评估后保存 |
+| `/instinct` | 自动观察 + 原子级学习 + 演化（hooks 驱动，项目隔离） |
 
 ### Skill 与项目管理
 
@@ -125,21 +114,111 @@ READ → EXPLORE → PLAN → RED 🔴 → IMPLEMENT → GREEN 🟢 → COMMIT
 
 ---
 
+## 团队编排详情
+
+### backend-team（现有项目开发）
+
+多 Agent 团队，自动编排完整开发流水线。详见 `skills/backend-team/SKILL.md`。
+
+**团队角色：**
+
+| 角色 | Agent | 职责 |
+|------|-------|------|
+| lead | self | 方案预研、Research & Reuse、任务分解、计划写入、全量验证、编排协调 |
+| developer | general-purpose (bypassPermissions) | TDD 任务执行循环 |
+| polisher | general-purpose (bypassPermissions) | 代码简化 + 风格修复 |
+| build-fixer | build-error-resolver（项目 agent） | 验证失败时自动修复 build/lint/type 错误 |
+| plan-reviewer | code-architect（项目 agent） | 零上下文方案审查，挑战完整性和合理性 |
+| reviewer | code-reviewer（项目 agent） | 生产级 CR，拥有完整代码上下文 |
+| blind-reviewer | code-reviewer（项目 agent） | 零上下文盲审，仅基于 PR 描述 + diff |
+| security-reviewer | security-reviewer（项目 agent） | 安全审查，聚焦漏洞检测（条件触发） |
+
+**流水线：**
+
+```
+Research & Reuse（lead）
+  → 方案预研（lead）
+  → 方案审查（plan-reviewer）
+  → 任务分解 + 计划写入（lead）
+  → TDD 开发循环（developer）
+  → 全量验证 + 自动修复（lead + build-fixer）
+  → 代码打磨（polisher）
+  → 多维代码审查（reviewer + blind-reviewer + security-reviewer）
+  → 报告
+```
+
+### framework-team（新项目脚手架）
+
+面向"从零开始"的新项目场景。详见 `skills/framework-team/SKILL.md`。
+
+**与 backend-team 的核心差异：** 阶段 1 用架构设计（技术栈选择 → 目录结构 → 模块划分）替代代码探索，脚手架任务使用 TDD 简化模式。
+
+**流水线：**
+
+```
+需求收集（lead）
+  → 架构设计（lead）
+  → 方案审查（plan-reviewer）
+  → 任务分解 + 计划写入（lead）
+  → 脚手架 + TDD 开发（developer）
+  → 全量验证（lead）
+  → 代码打磨（polisher）
+  → 双重代码审查（reviewer + blind-reviewer）
+  → 报告
+```
+
+### frontend-team（前端开发）
+
+面向前端开发场景，支持 React、Vue3、Vue2。详见 `skills/frontend-team/SKILL.md`。
+
+**与 backend-team 的核心差异：** 阶段 1 集成 ui-ux-pro-max + frontend-design 生成设计系统和 UI 方案，阶段 4 polisher 增加 UI/UX Pre-Delivery Checklist。
+
+**团队角色：**
+
+| 角色 | Agent | 职责 |
+|------|-------|------|
+| lead | self | 需求分析、设计系统生成、UI 方案、任务分解、编排协调 |
+| developer | general-purpose (bypassPermissions) | 前端组件/页面实现 |
+| polisher | general-purpose (bypassPermissions) | UI/UX 规范检查 + 代码简化 + 风格修复 |
+| build-fixer | build-error-resolver（项目 agent） | 验证失败时自动修复 build/lint/type 错误 |
+| plan-reviewer | code-architect（项目 agent） | 零上下文方案审查 |
+| reviewer | code-reviewer（项目 agent） | 前端 CR |
+| blind-reviewer | code-reviewer（项目 agent） | 零上下文盲审 |
+| security-reviewer | security-reviewer（项目 agent） | 前端安全审查（XSS、敏感数据暴露、CSP，条件触发） |
+
+**流水线：**
+
+```
+设计系统生成（lead）
+  → UI 方案预研（lead）
+  → 方案审查（plan-reviewer）
+  → 任务分解 + 计划写入（lead）
+  → 前端开发（developer）
+  → 全量验证 + 自动修复（lead + build-fixer）
+  → UI/UX 打磨（polisher）
+  → 多维代码审查（reviewer + blind-reviewer + security-reviewer）
+  → 报告
+```
+
+---
+
 ## 快速开始
 
 ### 一键全流程开发
 
 ```bash
-/dev-team
+/backend-team       # 现有项目开发
+/framework-team     # 从零搭建新项目
+/frontend-team      # 前端开发
 ```
 
 ### 手动逐步执行
 
 ```bash
 /plan-preview        # 方案预研（可选）
-/plan-init           # 初始化项目
+/plan-init           # 需求分析和任务分解
+/plan-write          # 写入任务列表
 /plan-next           # 执行任务（循环）
-/plan-archive        # 归档
 ```
 
 ### 代码质量
@@ -150,10 +229,12 @@ READ → EXPLORE → PLAN → RED 🔴 → IMPLEMENT → GREEN 🟢 → COMMIT
 /code-simplifier     # 简化优化
 ```
 
-### 生成测试
+### 测试与验证
 
 ```bash
-/unit-test           # 自动检测语言并生成
+/unit-test           # 生成单元测试
+/e2e-test            # 前端 E2E 验证
+/api-verify          # 后端 API 验证
 ```
 
 ---
@@ -163,20 +244,31 @@ READ → EXPLORE → PLAN → RED 🔴 → IMPLEMENT → GREEN 🟢 → COMMIT
 ```
 ai_messy/
 ├── .claude-plugin/        # Plugin 清单
-│   └── plugin.json
-├── skills/                # 所有 Claude Code Skills
+│   ├── plugin.json
+│   └── marketplace.json
+├── agents/                # 项目级 Agent 定义
+│   ├── build-error-resolver.md
+│   ├── code-architect.md
+│   ├── code-reviewer.md
+│   └── security-reviewer.md
+├── skills/                # 所有 Claude Code Skills (27 个)
 │   ├── plan-preview/
 │   ├── plan-init/
+│   ├── plan-write/
 │   ├── plan-next/
-│   ├── plan-log/
-│   ├── plan-archive/
-│   ├── dev-team/
+│   ├── backend-team/
+│   ├── framework-team/
+│   ├── frontend-team/
 │   ├── code-review/
 │   ├── code-fixer/
 │   ├── code-simplifier/
 │   ├── unit-test/
+│   ├── e2e-test/
+│   ├── api-verify/
 │   ├── git-quick/
 │   ├── git-worktree/
+│   ├── learn/
+│   ├── instinct/
 │   ├── add_or_update_skill/
 │   ├── setup-permissions/
 │   ├── claude-md-manager/
@@ -190,7 +282,8 @@ ai_messy/
 ├── common/                # 共享参考文档
 │   ├── spock-test-guide.md
 │   ├── go_test_spock.md
-│   └── workTeam.md
+│   ├── workTeam.md
+│   └── zshrc.md
 ├── CLAUDE.md
 ├── LICENSE
 └── README.md

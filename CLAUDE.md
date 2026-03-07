@@ -22,7 +22,7 @@
 | `/plan-init` | 需求分析和任务分解，生成计划文件供审批 |
 | `/plan-write` | 读取审批后的计划文件，写入 `features.json` 和 `dev-YYYY-MM-DD.log` |
 | `/plan-next` | 执行下一个待处理任务，使用 TDD 循环（RED → GREEN → COMMIT） |
-| `/dev-team` | 全流程编排：预研 + 初始化 + 开发 + 简化 + 修复 |
+| `/backend-team` | 全流程编排：预研 + 初始化 + 开发 + 简化 + 修复 |
 | `/framework-team` | 新项目脚手架编排：架构设计 + 脚手架 + TDD + 验证 + CR |
 | `/frontend-team` | 前端开发编排：设计系统 + UI 方案 + 开发 + UI/UX 打磨 + CR |
 
@@ -68,9 +68,9 @@
 
 ## 开发团队（Agent 团队编排）
 
-### dev-team（现有项目开发）
+### backend-team（现有项目开发）
 
-详见 `skills/dev-team/SKILL.md`。
+详见 `skills/backend-team/SKILL.md`。
 
 多 Agent 团队，自动编排完整开发流水线：
 
@@ -93,9 +93,9 @@
 
 详见 `skills/framework-team/SKILL.md`。
 
-面向"从零开始"的新项目场景，替换 dev-team 的方案预研为架构设计，其余阶段完全复用。
+面向"从零开始"的新项目场景，替换 backend-team 的方案预研为架构设计，其余阶段完全复用。
 
-**与 dev-team 的核心差异：** 阶段 1 用架构设计（技术栈选择 → 目录结构 → 模块划分）替代代码探索，脚手架任务（config 类）使用 TDD 简化模式。
+**与 backend-team 的核心差异：** 阶段 1 用架构设计（技术栈选择 → 目录结构 → 模块划分）替代代码探索，脚手架任务（config 类）使用 TDD 简化模式。
 
 **流水线：** 需求收集（lead）→ 架构设计（lead）→ 方案审查（plan-reviewer）→ 任务分解（lead）→ 计划写入（lead）→ 脚手架+TDD 开发（developer）→ 全量验证（lead）→ 代码打磨（polisher）→ 双重代码审查（reviewer + blind-reviewer）→ 报告
 
@@ -105,7 +105,7 @@
 
 面向前端开发场景，串联设计 → 编码 → 打磨 → 审查的完整流水线。支持 React、Vue3、Vue2 三种前端框架。
 
-**与 dev-team 的核心差异：** 阶段 1 用设计系统生成 + UI 方案（集成 ui-ux-pro-max + frontend-design）替代代码探索，阶段 4 polisher 增加 UI/UX Pre-Delivery Checklist，全程按检测到的框架分支处理。
+**与 backend-team 的核心差异：** 阶段 1 用设计系统生成 + UI 方案（集成 ui-ux-pro-max + frontend-design）替代代码探索，阶段 4 polisher 增加 UI/UX Pre-Delivery Checklist，全程按检测到的框架分支处理。
 
 **团队角色：**
 
