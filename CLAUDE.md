@@ -24,6 +24,7 @@
 | `/plan-next` | 执行下一个待处理任务，使用 TDD 循环（RED → GREEN → COMMIT） |
 | `/dev-team` | 全流程编排：预研 + 初始化 + 开发 + 简化 + 修复 |
 | `/framework-team` | 新项目脚手架编排：架构设计 + 脚手架 + TDD + 验证 + CR |
+| `/frontend-team` | 前端开发编排：设计系统 + UI 方案 + 开发 + UI/UX 打磨 + CR |
 
 ### 代码质量
 
@@ -33,6 +34,8 @@
 | `/code-fixer` | 自动修复代码风格问题（保留变量名不变） |
 | `/code-simplifier` | 简化和优化代码 |
 | `/unit-test` | 生成单元测试 |
+| `/e2e-test` | 前端 E2E 验证（启动服务 → Playwright 验证 → 截图 → 报告） |
+| `/api-verify` | 后端 API 运行时验证（启动服务 → 逐接口验证 → 报告） |
 
 ### Git 工具
 
@@ -86,6 +89,27 @@
 **与 dev-team 的核心差异：** 阶段 1 用架构设计（技术栈选择 → 目录结构 → 模块划分）替代代码探索，脚手架任务（config 类）使用 TDD 简化模式。
 
 **流水线：** 需求收集（lead）→ 架构设计（lead）→ 方案审查（plan-reviewer）→ 任务分解（lead）→ 计划写入（lead）→ 脚手架+TDD 开发（developer）→ 全量验证（lead）→ 代码打磨（polisher）→ 双重代码审查（reviewer + blind-reviewer）→ 报告
+
+### frontend-team（前端开发）
+
+详见 `skills/frontend-team/SKILL.md`。
+
+面向前端开发场景，串联设计 → 编码 → 打磨 → 审查的完整流水线。支持 React、Vue3、Vue2 三种前端框架。
+
+**与 dev-team 的核心差异：** 阶段 1 用设计系统生成 + UI 方案（集成 ui-ux-pro-max + frontend-design）替代代码探索，阶段 4 polisher 增加 UI/UX Pre-Delivery Checklist，全程按检测到的框架分支处理。
+
+**团队角色：**
+
+| 角色 | Agent | 职责 |
+|------|-------|------|
+| lead | self | 需求分析、设计系统生成、UI 方案、任务分解、计划写入、全量验证、编排协调 |
+| developer | general-purpose (bypassPermissions) | 前端组件/页面实现 |
+| polisher | general-purpose (bypassPermissions) | UI/UX 规范检查 + 代码简化 + 风格修复 |
+| plan-reviewer | code-architect（项目 agent） | 零上下文方案审查，挑战完整性和合理性 |
+| reviewer | code-reviewer（项目 agent） | 前端 CR（引用 code-review/frontend.md） |
+| blind-reviewer | code-reviewer（项目 agent） | 零上下文盲审，仅基于 PR 描述 + diff |
+
+**流水线：** 设计系统生成（lead）→ UI 方案预研（lead）→ 方案审查（plan-reviewer）→ 任务分解（lead）→ 计划写入（lead）→ 前端开发（developer）→ 全量验证（lead）→ UI/UX 打磨（polisher）→ 双重代码审查（reviewer + blind-reviewer）→ 报告
 
 ## 支持的代码规范
 
