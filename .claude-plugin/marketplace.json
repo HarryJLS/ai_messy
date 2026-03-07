@@ -1,12 +1,12 @@
 {
-  "name": "ai_messy_project",
+  "name": "ai_messy",
   "owner": {
     "name": "HarryJLS",
     "url": "https://github.com/HarryJLS"
   },
   "plugins": [
     {
-      "name": "ai-messy-project",
+      "name": "ai_messy",
       "source": "./",
       "description": "AI Agent 工作流和开发指南合集 - 包含 TDD 开发流程、代码审查、团队编排等 Claude Code 技能",
       "version": "1.0.0"

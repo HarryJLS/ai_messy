@@ -1,4 +1,4 @@
-# AI Messy Project
+# AI Messy
 
 Claude Code Plugin — AI Agent 工作流和开发指南技能合集（中文）。
 
@@ -6,10 +6,10 @@ Claude Code Plugin — AI Agent 工作流和开发指南技能合集（中文）
 
 ```bash
 # 1. 添加 marketplace
-/plugin marketplace add HarryJLS/ai_messy_project
+/plugin marketplace add HarryJLS/ai_messy
 
 # 2. 安装插件
-/plugin install ai-messy-project@ai_messy_project
+/plugin install ai_messy@ai_messy
 ```
 
 安装后即可通过 `/skill-name` 命令调用所有技能。
@@ -161,7 +161,7 @@ READ → EXPLORE → PLAN → RED 🔴 → IMPLEMENT → GREEN 🟢 → COMMIT
 ## 目录结构
 
 ```
-ai_messy_project/
+ai_messy/
 ├── .claude-plugin/        # Plugin 清单
 │   └── plugin.json
 ├── skills/                # 所有 Claude Code Skills
