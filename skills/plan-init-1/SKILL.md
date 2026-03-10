@@ -1,13 +1,13 @@
 ---
-name: plan-init
-description: 初始化 Agent 框架，通过 Plan Mode 完成需求分析和任务分解。当用户说 "/plan-init"、"初始化项目"、"开始新项目"、"创建任务列表"、"设置 Agent"、"初始化任务"、"init"、"初始化" 时触发。这是一个项目初始化 skill，不是创意或功能开发——不需要先 brainstorming。审批后只输出确认，不自动串联任何 skill。
+name: plan-init-1
+description: 一站式初始化：需求分析 + 任务分解 + 文件写入 + 循环执行。当用户说 "/plan-init-1"、"一站式开发"、"全流程初始化" 时触发。审批后自动串联 plan-write 和 plan-next，适合独立使用场景。
 ---
 
-# Plan Init
+# Plan Init 1（一站式）
 
-在 Plan Mode 中完成需求分析、技术决策和任务分解，输出计划文件供审批。
+在 Plan Mode 中完成需求分析、技术决策和任务分解，审批后自动串联 `/plan-write` + `/plan-next` 完成全流程。
 
-**本 skill 只负责"想"。** 审批后输出确认信息并停止，串联逻辑由调用方决定。
+**本 skill 是 `/plan-init` 的一站式版本。** 审批后自动调用 `/plan-write` 写入文件，再自动调用 `/plan-next` 循环执行任务。
 
 ## 设计原则
 
@@ -184,23 +184,17 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 
 9. ⛔ **门控: 等待用户审批计划**
 
-### 步骤 4: 审批后输出
+### 步骤 4: 自动串联 plan-write + plan-next
 
-用户审批计划后，输出确认信息并停止：
+用户审批计划后：
 
-```
-✅ 计划已审批！
-
-下一步:
-• 运行 /plan-write 写入 features.json 和开发日志
-• 运行 /plan-next 开始循环执行任务
-```
-
-⛔ 输出后立即停止，不得自动调用任何 skill。
+1. 输出 "✅ 计划已审批！正在写入文件..."
+2. **自动调用 `Skill('plan-write')` 完成文件写入**（features.json + 开发日志）
+3. 写入完成后，**自动调用 `Skill('plan-next')` 开始循环执行任务**
 
 ## 完成后输出
 
-见步骤 4 的输出格式。
+见步骤 4。
 
 ## 后续修改同步
 

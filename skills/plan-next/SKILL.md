@@ -1,15 +1,37 @@
 ---
 name: plan-next
-description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/plan-next"、"执行下一个任务"、"继续任务"、"开始开发" 时触发。必须先运行 /plan-init 创建 features.json。执行 READ → EXPLORE → PLAN → RED → IMPLEMENT → GREEN → REFACTOR → COMMIT 八阶段流程。
+description: 自动循环执行所有待处理任务（passes: false），失败跳过并继续，最终输出汇总报告。当用户说 "/plan-next"、"执行下一个任务"、"继续任务"、"开始开发" 时触发。必须先运行 /plan-init 创建 features.json。执行 READ → EXPLORE → PLAN → RED → IMPLEMENT → GREEN → REFACTOR → COMMIT 八阶段循环。
 ---
 
 # Plan Next
 
-使用 TDD 循环执行下一个待处理任务。
+自动循环执行所有待处理任务，失败跳过并继续，最终输出汇总报告。
+
+## 循环控制
+
+### 初始化
+
+1. 读取 `features.json`，统计总任务数、待处理数（`passes: false` 且 `skipped` 不为 `true`）
+2. 如果 `features.json` 不存在：输出"⚠️ 任务未写入，请先运行 /plan-init 初始化项目" → 停止
+3. 输出循环开始信息："🔄 开始循环执行，共 N 个任务，待处理 M 个"
+
+### 失败处理
+
+当任务在任意阶段失败（测试无法通过、实现遇到阻塞等）：
+
+1. 在 `features.json` 中为该任务添加 `"skipped": true` 和 `"skipReason": "失败原因描述"`
+2. 写跳过日志到 `dev-YYYY-MM-DD.log`
+3. 输出："⏭️ 任务 [ID] 跳过：[原因]，继续下一个"
+4. **继续下一个任务**，不中断循环
+
+### 循环结束条件
+
+- 所有任务已处理（完成或跳过）
+- 用户主动中断
 
 ## 关键规则
 
-- **一次一个任务**，仅在验证后设置 `passes: true`
+- **循环执行**：一次调用自动执行所有待处理任务，失败跳过继续
 - **TDD 强制**：必须先看到 RED 再看 GREEN
 - **TDD 弹性**：根据任务 category 调整严格度
   | category | TDD 模式 |
@@ -69,9 +91,9 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 
 ## 阶段 1: READ
 
-1. 读取 `features.json`，找到第一个 `passes: false`
-2. 如果没有："所有任务已完成 🎉" → 停止
-3. 宣布："开始任务 [ID]: [描述]"
+1. 读取 `features.json`，找到第一个 `passes: false` 且 `skipped` 不为 `true` 的任务
+2. 如果没有：退出循环，进入汇总报告
+3. 宣布："开始任务 [ID]: [描述]（第 X/N 个）"
 
 ## 阶段 2: EXPLORE（条件执行）
 
@@ -222,6 +244,8 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 
 1. 设置 `passes: true` 在 features.json
 2. 写最终日志
+3. 输出进度："✅ 任务 [ID] 完成（已完成 X/N）"
+4. **返回阶段 1**，继续下一个待处理任务
 
 ---
 
@@ -249,12 +273,26 @@ description: 使用 TDD 循环执行下一个待处理任务。当用户说 "/pl
 | red | 写实现代码 |
 | green | 重构优化，进入 refactoring |
 | refactoring | 检查 acceptance，提交 |
-| done | /plan-next |
+| done | 自动循环到下一个 passes:false 的任务 |
 
-## 完成后输出
+## 完成后输出（汇总报告）
+
+循环结束后输出汇总：
 
 ```
-✅ 任务 [ID] 完成！
-📄 日志: dev-YYYY-MM-DD.log
-→ 运行 /plan-next 继续下一任务
+📊 循环执行汇总
+━━━━━━━━━━━━━━━
+✅ 已完成: X 个
+⏭️ 已跳过: Y 个
+⏳ 未处理: Z 个
+━━━━━━━━━━━━━━━
+
+[如有跳过任务]
+⏭️ 跳过详情:
+- 任务 [ID]: [skipReason]
+
+[下一步建议]
+→ 所有完成: "所有任务已完成 🎉"
+→ 有跳过: "建议检查跳过的任务，修复后重新运行 /plan-next"
+→ 有未处理: "剩余任务可运行 /plan-next 继续"
 ```
