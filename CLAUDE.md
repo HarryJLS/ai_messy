@@ -25,6 +25,7 @@
 | `/backend-team` | 全流程编排：预研 + 初始化 + 开发 + 简化 + 修复 |
 | `/framework-team` | 新项目脚手架编排：架构设计 + 脚手架 + TDD + 验证 + CR |
 | `/frontend-team` | 前端开发编排：设计系统 + UI 方案 + 开发 + UI/UX 打磨 + CR |
+| `/backend-single` | 精简版后端编排：plan-write → plan-next → simplifier → fixer（需先 /plan-init） |
 
 ### 代码质量
 
@@ -121,6 +122,23 @@
 | security-reviewer | security-reviewer（项目 agent） | 前端安全审查（XSS、敏感数据暴露、CSP，条件触发） |
 
 **流水线：** 设计系统生成（lead）→ UI 方案预研（lead）→ 方案审查（plan-reviewer）→ 任务分解（lead）→ 计划写入（lead）→ 前端开发（developer）→ 全量验证 + 自动修复（lead + build-fixer）→ UI/UX 打磨（polisher）→ 多维代码审查（reviewer + blind-reviewer + security-reviewer）→ 报告
+
+## 精简版编排（Single 模式）
+
+`/backend-single` 是 `/backend-team` 的精简版，去掉 Agent Team、方案预研、方案审查、全量验证、多维 CR，只保留 4 个核心 skill 的顺序执行。
+
+**前置条件：** 需先运行 `/plan-init` 完成任务分解并审批。
+
+**流水线：** plan-write → plan-next 循环 → code-simplifier → code-fixer
+
+**跳入点判断：**
+
+| 文件状态 | 跳入阶段 |
+|----------|----------|
+| 无 `features.json` | 阶段 1（完整流程） |
+| 有 `features.json`、有未完成任务 | 阶段 2（继续开发） |
+| 有 `features.json`、全部完成、无 `[Polisher-Done]` | 阶段 3（代码优化） |
+| 有 `features.json`、全部完成、有 `[Polisher-Done]` | 直接输出报告 |
 
 ## 支持的代码规范
 
