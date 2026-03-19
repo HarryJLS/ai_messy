@@ -37,10 +37,10 @@ description: 精简版后端开发编排，顺序执行四个核心 skill（plan
 
 | 文件状态 | 跳入阶段 |
 |----------|----------|
-| 无 `features.json` | 阶段 1（完整流程） |
-| 有 `features.json`、有未完成任务（`passes: false`） | 阶段 2（继续开发） |
-| 有 `features.json`、全部完成、dev log 中无 `[Polisher-Done]` 标记 | 阶段 3（代码优化） |
-| 有 `features.json`、全部完成、dev log 中有 `[Polisher-Done]` 标记 | 直接输出报告 |
+| 无 `.plan/features.json` | 阶段 1（完整流程） |
+| 有 `.plan/features.json`、有未完成任务（`passes: false`） | 阶段 2（继续开发） |
+| 有 `.plan/features.json`、全部完成、dev log 中无 `[Polisher-Done]` 标记 | 阶段 3（代码优化） |
+| 有 `.plan/features.json`、全部完成、dev log 中有 `[Polisher-Done]` 标记 | 直接输出报告 |
 
 ---
 
@@ -48,10 +48,10 @@ description: 精简版后端开发编排，顺序执行四个核心 skill（plan
 
 **前置检查**：确认 `~/.claude/plans/*.md` 存在（由 `/plan-init` 生成）。若不存在，提示用户先运行 `/plan-init`，然后停止。
 
-跳过条件：已存在 `features.json` 时跳过，直接进入阶段 2。
+跳过条件：已存在 `.plan/features.json` 时跳过，直接进入阶段 2。
 
 1. 调用 `Skill("plan-write")` 将计划写入项目文件
-2. 确认 `features.json` 和 `dev-*.log` 存在 → 进入阶段 2
+2. 确认 `.plan/features.json` 和 `.plan/dev-*.log` 存在 → 进入阶段 2
 
 ---
 
@@ -60,10 +60,10 @@ description: 精简版后端开发编排，顺序执行四个核心 skill（plan
 循环执行 `Skill("plan-next")`，直到所有任务的 `passes` 都为 `true`。
 
 **执行步骤：**
-1. 读取 `features.json`，确认还有 `passes: false` 的任务
+1. 读取 `.plan/features.json`，确认还有 `passes: false` 的任务
 2. 调用 `Skill("plan-next")` 执行下一个任务
 3. plan-next 内部按 TDD 流程完成（RED → GREEN → COMMIT）
-4. 检查 `features.json`，如仍有未完成任务则继续循环
+4. 检查 `.plan/features.json`，如仍有未完成任务则继续循环
 5. 全部 `passes: true` → 进入阶段 3
 
 **卡住策略：**
@@ -112,8 +112,8 @@ description: 精简版后端开发编排，顺序执行四个核心 skill（plan
 | 新增/删除行数 | +X / -X |
 
 ### 产出文件
-- `features.json` - 任务状态（所有 passes: true）
-- `dev-YYYY-MM-DD.log` - 开发日志
+- `.plan/features.json` - 任务状态（所有 passes: true）
+- `.plan/dev-YYYY-MM-DD.log` - 开发日志
 - 代码实现 + 测试文件
 
 ### 后续建议

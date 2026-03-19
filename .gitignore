@@ -44,9 +44,8 @@ Desktop.ini
 # =========================
 # Agent 工作流产物
 # =========================
-# 任务状态文件 (每次初始化生成)
-features.json
-features.backup.*.json
+# Agent 工作流产物目录
+.plan/
 
 # 日志目录 (任务执行产生)
 logs/

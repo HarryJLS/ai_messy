@@ -30,7 +30,7 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
 | 阶段 | 交互方式 |
 |------|---------|
 | 阶段 0-2（lead 自己执行） | lead 直接用 AskUserQuestion 与用户交互，无需转发 |
-| 阶段 1.5（plan-reviewer 执行） | plan-reviewer SendMessage 给 lead → lead 用 AskUserQuestion 展示审查结果 → 采纳的修改更新到 task.md |
+| 阶段 1.5（plan-reviewer 执行） | plan-reviewer SendMessage 给 lead → lead 用 AskUserQuestion 展示审查结果 → 采纳的修改更新到 .plan/task.md |
 | 阶段 3-4（teammate 执行） | teammate SendMessage 给 lead → lead 用 AskUserQuestion 询问用户 → lead SendMessage 转发答案 |
 | 阶段 5（CR reviewer 执行） | reviewer SendMessage 给 lead → lead 汇总后用 AskUserQuestion 展示报告 |
 
@@ -56,13 +56,13 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
 
 | 文件状态 | 跳入阶段 |
 |----------|----------|
-| 无 `task.md`、无 `features.json` | 阶段 1（完整流程） |
-| 有 `task.md`、无计划文件（`~/.claude/plans/*.md`）、无 `features.json` | 阶段 2（plan-init + plan-write） |
-| 有 `task.md`、有计划文件、无 `features.json` | 阶段 2b（仅 plan-write） |
-| 有 `features.json`、有未完成任务 | 阶段 3（跳过初始化） |
-| 有 `features.json`、所有 `passes: true`、dev log 中无 `[Verification-Done]` 标记 | 阶段 3.5（全量验证） |
-| 有 `features.json`、所有 `passes: true`、dev log 中有 `[Verification-Done]` 标记、无 `[Polisher-Done]` 标记 | 阶段 4（仅优化） |
-| 有 `features.json`、所有 `passes: true`、dev log 中有 `[Polisher-Done]` 标记 | 阶段 5（CR） |
+| 无 `.plan/task.md`、无 `.plan/features.json` | 阶段 1（完整流程） |
+| 有 `.plan/task.md`、无计划文件（`~/.claude/plans/*.md`）、无 `.plan/features.json` | 阶段 2（plan-init + plan-write） |
+| 有 `.plan/task.md`、有计划文件、无 `.plan/features.json` | 阶段 2b（仅 plan-write） |
+| 有 `.plan/features.json`、有未完成任务 | 阶段 3（跳过初始化） |
+| 有 `.plan/features.json`、所有 `passes: true`、dev log 中无 `[Verification-Done]` 标记 | 阶段 3.5（全量验证） |
+| 有 `.plan/features.json`、所有 `passes: true`、dev log 中有 `[Verification-Done]` 标记、无 `[Polisher-Done]` 标记 | 阶段 4（仅优化） |
+| 有 `.plan/features.json`、所有 `passes: true`、dev log 中有 `[Polisher-Done]` 标记 | 阶段 5（CR） |
 
 5. 根据跳入点：
    - 若进入阶段 1 或 2：lead 直接执行，无需创建团队（团队在阶段 3 才需要）
@@ -72,7 +72,7 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
 
 ### 阶段 1: 架构设计（替代 backend-team 的 plan-preview）
 
-**这是与 backend-team 唯一的本质区别。** 无代码可探索，从需求出发设计架构并生成 task.md。
+**这是与 backend-team 唯一的本质区别。** 无代码可探索，从需求出发设计架构并生成 .plan/task.md。
 
 **lead 操作（在 EnterPlanMode 中完成）：**
 
@@ -89,7 +89,7 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
    - 核心接口/数据模型设计
    - 依赖关系和分层架构
 
-3. **生成 task.md**：任务分两批：
+3. **生成 .plan/task.md**：任务分两批：
    - **脚手架批**（category: config，前 2-4 个任务）：
      - 项目初始化（package.json / go.mod / pom.xml 等）
      - 目录结构创建
@@ -99,7 +99,7 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
      - 核心模块实现（按依赖顺序排列）
      - 每个任务包含 dependsOn + complexity
 
-   task.md 格式兼容 `/plan-init`，示例：
+   .plan/task.md 格式兼容 `/plan-init`，示例：
    ```markdown
    ## 技术方案
 
@@ -116,7 +116,7 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
    | 5 | 功能模块 B | feature | 4 | L |
    ```
 
-4. **生成 pr-description.md**：
+4. **生成 .plan/pr-description.md**：
 
 ```markdown
 ## PR 标题
@@ -132,25 +132,25 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
 {涉及的模块/文件类型，粗粒度}
 ```
 
-5. ExitPlanMode → 用户审批 → 写入 task.md 和 pr-description.md
+5. ExitPlanMode → 用户审批 → 写入 .plan/task.md 和 .plan/pr-description.md
 6. 确认两个文件已生成 → 进入阶段 1.5
 
 ---
 
 ### 阶段 1.5: 方案对抗审查（plan-reviewer）
 
-**触发条件**：task.md 中任务数 ≥ 3 时执行。任务数 < 3 的小改动直接跳过，进入阶段 2。
+**触发条件**：.plan/task.md 中任务数 ≥ 3 时执行。任务数 < 3 的小改动直接跳过，进入阶段 2。
 
 **lead 操作：**
 
-1. 读取 task.md 内容，统计任务数量
+1. 读取 .plan/task.md 内容，统计任务数量
 2. spawn plan-reviewer（`subagent_type: code-architect`（项目 agent）, `team_name: framework-team`），发送指令：
 
 ```
 你是方案审查者，负责用独立视角挑战技术方案的完整性和合理性。
 
 ## 技术方案
-{task.md 完整内容}
+{.plan/task.md 完整内容}
 
 请从以下维度审查，只报告你认为**确实有问题**的点（没问题的不用列）：
 
@@ -188,7 +188,7 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
 跳过条件：已存在计划文件（`~/.claude/plans/*.md`）时跳过，直接进入 2b。
 
 1. 调用 `Skill("plan-init")` 执行任务分解和审批
-2. 将 `task.md` 作为需求文档输入
+2. 将 `.plan/task.md` 作为需求文档输入
 3. skill 内的门控处理：
    - 核心目标确认：基于阶段 1 已确认的方案，直接确认
    - 技术决策：基于阶段 1 已确认的决策，直接确认
@@ -198,8 +198,8 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
 
 1. 调用 `Skill("plan-write")` 将计划写入项目文件
 2. skill 内的门控处理：
-   - 文件冲突（features.json 已存在）：选择"覆盖"
-3. 确认 `features.json` 和 `dev-*.log` 存在 → 进入阶段 3
+   - 文件冲突（.plan/features.json 已存在）：选择"覆盖"
+3. 确认 `.plan/features.json` 和 `.plan/dev-*.log` 存在 → 进入阶段 3
 
 ---
 
@@ -212,7 +212,7 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
 请循环执行 /plan-next，直到所有任务的 passes 都为 true。
 
 执行步骤：
-1. 读取 features.json，找到第一个 passes: false 的任务
+1. 读取 .plan/features.json，找到第一个 passes: false 的任务
 2. 调用 Skill("plan-next") 执行该任务
 3. 按 TDD 流程完成（READ → EXPLORE → PLAN → RED → IMPLEMENT → GREEN → COMMIT）
 4. 每完成一个任务，SendMessage 通知 lead 进度（已完成/总数）
@@ -220,14 +220,14 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
 6. 全部完成后 SendMessage 通知 lead
 
 脚手架任务特殊处理：
-- features.json 中 category 为 "config" 的任务，属于脚手架搭建
+- .plan/features.json 中 category 为 "config" 的任务，属于脚手架搭建
 - 脚手架任务使用 TDD 简化模式：跳过 RED 阶段（无需先写失败测试），直接 IMPLEMENT → GREEN → COMMIT
 - 核心/功能任务正常走完整 TDD 流程
 
 注意事项：
 - TDD 流程内的常规门控（EXPLORE→PLAN、PLAN→RED 确认）：自主跳过
 - 关键技术决策（实现方式有多个方案、不确定用户意图时）：SendMessage 给 lead
-- features.json 在此阶段只有你一个 agent 读写，无并发问题
+- .plan/features.json 在此阶段只有你一个 agent 读写，无并发问题
 
 卡住策略：
 - 同一任务内测试连续失败 3 次：SendMessage 给 lead，附带错误日志和已尝试的方案
@@ -237,7 +237,7 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
 ```
 
 **lead 验证：**
-- 收到进度通知后确认 features.json 状态
+- 收到进度通知后确认 .plan/features.json 状态
 - 收到关键决策请求 → AskUserQuestion 询问用户 → SendMessage 转发答案
 - 收到卡住上报 → AskUserQuestion 展示错误详情，询问用户决策（修复方向 / 跳过任务 / 调整方案）
 - 全部 `passes: true` → 标记任务完成 → shutdown developer → 进入阶段 3.5
@@ -324,7 +324,7 @@ spawn polisher（`subagent_type: general-purpose`, `mode: bypassPermissions`, `t
 
 1. 准备 CR 材料：
    - 执行 `git diff main...HEAD`（或合适的 base branch），保存 diff 内容
-   - 读取 `pr-description.md`
+   - 读取 `.plan/pr-description.md`
 
 2. 并行 spawn 两个 reviewer（审查标准详见 `references/reviewer-prompt.md`）：
 
@@ -365,7 +365,7 @@ spawn（`subagent_type: code-reviewer`（项目 agent）, `team_name: framework-
 你只有以下信息，禁止读取任何项目文件或探索代码库：
 
 ## PR 描述
-{pr-description.md 内容}
+{.plan/pr-description.md 内容}
 
 ## Code Diff
 {git diff 输出}
@@ -434,10 +434,10 @@ spawn（`subagent_type: code-reviewer`（项目 agent）, `team_name: framework-
 | CR 发现 | CRITICAL:X HIGH:X MEDIUM:X LOW:X |
 
 ### 产出文件
-- `task.md` - 架构设计文档
-- `pr-description.md` - PR 描述（阶段 1 生成）
-- `features.json` - 任务状态（所有 passes: true）
-- `dev-YYYY-MM-DD.log` - 开发日志
+- `.plan/task.md` - 架构设计文档
+- `.plan/pr-description.md` - PR 描述（阶段 1 生成）
+- `.plan/features.json` - 任务状态（所有 passes: true）
+- `.plan/dev-YYYY-MM-DD.log` - 开发日志
 - 项目脚手架 + 核心代码 + 测试文件
 
 ### 后续建议

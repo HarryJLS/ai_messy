@@ -15,7 +15,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 | 开发者 | developer | general-purpose | bypassPermissions | TDD 循环开发所有任务 |
 | 打磨者 | polisher | general-purpose | bypassPermissions | 代码简化 + 规范修复 |
 | 构建修复者 | build-fixer | build-error-resolver（项目 agent） | - | 验证失败时自动修复 build/lint/type 错误 |
-| 方案审查者 | plan-reviewer | code-architect（项目 agent） | - | 零上下文审查 task.md，挑战方案完整性和合理性 |
+| 方案审查者 | plan-reviewer | code-architect（项目 agent） | - | 零上下文审查 .plan/task.md，挑战方案完整性和合理性 |
 | 审查者 | reviewer | code-reviewer（项目 agent） | - | 上线前正式 CR，有完整代码上下文 |
 | 盲审者 | blind-reviewer | code-reviewer（项目 agent） | - | 零上下文盲审，仅依据 PR 描述 + diff |
 | 安全审查者 | security-reviewer | security-reviewer（项目 agent） | - | 安全审查，聚焦漏洞检测（条件触发） |
@@ -31,7 +31,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 | 阶段 | 交互方式 |
 |------|---------|
 | 阶段 1-2（lead 自己执行） | lead 直接用 AskUserQuestion 与用户交互，无需转发 |
-| 阶段 1.5（plan-reviewer 执行） | plan-reviewer SendMessage 给 lead → lead 用 AskUserQuestion 展示审查结果 → 采纳的修改更新到 task.md |
+| 阶段 1.5（plan-reviewer 执行） | plan-reviewer SendMessage 给 lead → lead 用 AskUserQuestion 展示审查结果 → 采纳的修改更新到 .plan/task.md |
 | 阶段 3-4（teammate 执行） | teammate SendMessage 给 lead → lead 用 AskUserQuestion 询问用户 → lead SendMessage 转发答案 |
 | 阶段 5（CR reviewer 执行） | reviewer SendMessage 给 lead → lead 汇总后用 AskUserQuestion 展示报告 |
 
@@ -53,13 +53,13 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 
 | 文件状态 | 跳入阶段 |
 |----------|----------|
-| 无 `task.md`、无 `features.json` | 阶段 1（完整流程） |
-| 有 `task.md`、无计划文件（`~/.claude/plans/*.md`）、无 `features.json` | 阶段 2（plan-init + plan-write） |
-| 有 `task.md`、有计划文件、无 `features.json` | 阶段 2b（仅 plan-write） |
-| 有 `features.json`、有未完成任务 | 阶段 3（跳过初始化） |
-| 有 `features.json`、所有 `passes: true`、dev log 中无 `[Verification-Done]` 标记 | 阶段 3.5（全量验证） |
-| 有 `features.json`、所有 `passes: true`、dev log 中有 `[Verification-Done]` 标记、无 `[Polisher-Done]` 标记 | 阶段 4（仅优化） |
-| 有 `features.json`、所有 `passes: true`、dev log 中有 `[Polisher-Done]` 标记 | 阶段 5（CR） |
+| 无 `.plan/task.md`、无 `.plan/features.json` | 阶段 1（完整流程） |
+| 有 `.plan/task.md`、无计划文件（`~/.claude/plans/*.md`）、无 `.plan/features.json` | 阶段 2（plan-init + plan-write） |
+| 有 `.plan/task.md`、有计划文件、无 `.plan/features.json` | 阶段 2b（仅 plan-write） |
+| 有 `.plan/features.json`、有未完成任务 | 阶段 3（跳过初始化） |
+| 有 `.plan/features.json`、所有 `passes: true`、dev log 中无 `[Verification-Done]` 标记 | 阶段 3.5（全量验证） |
+| 有 `.plan/features.json`、所有 `passes: true`、dev log 中有 `[Verification-Done]` 标记、无 `[Polisher-Done]` 标记 | 阶段 4（仅优化） |
+| 有 `.plan/features.json`、所有 `passes: true`、dev log 中有 `[Polisher-Done]` 标记 | 阶段 5（CR） |
 
 4. 根据跳入点：
    - 若进入阶段 1 或 2：lead 直接执行，无需创建团队（团队在阶段 3 才需要）
@@ -78,7 +78,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 - 如有参考项目：探索参考项目相关代码，提取可复用的模式和工具函数
 - WebSearch 搜索是否有成熟的库/工具可以直接使用
 - 检查项目现有代码库中是否已有类似实现可复用
-- 将发现记录到 task.md 的 references 字段
+- 将发现记录到 .plan/task.md 的 references 字段
 
 **1. 方案预研**
 
@@ -86,11 +86,11 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 2. 将用户的完整原始输入（包括文件路径/链接）和 Research 阶段的发现作为上下文传入
 3. 如有参考项目：
    - 先探索参考项目的相关代码流程，理解其实现模式
-   - 将参考项目的关键文件路径写入 task.md 任务的 references 字段
+   - 将参考项目的关键文件路径写入 .plan/task.md 任务的 references 字段
    - 在任务描述中说明与参考项目的差异点
 4. skill 内的所有门控（需求确认、代码探索确认、技术决策）由 lead 直接与用户交互完成
-5. 确认 `task.md` 已生成
-6. 从 task.md 提取关键信息，生成 `pr-description.md`：
+5. 确认 `.plan/task.md` 已生成
+6. 从 .plan/task.md 提取关键信息，生成 `.plan/pr-description.md`：
 
 ```markdown
 ## PR 标题
@@ -106,31 +106,31 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 {涉及的模块/文件类型，粗粒度}
 ```
 
-来源：从 task.md 的「背景」「目标」「技术方案.整体思路」提取，**不含具体文件路径和代码细节**。
+来源：从 .plan/task.md 的「背景」「目标」「技术方案.整体思路」提取，**不含具体文件路径和代码细节**。
 
-7. 确认 `pr-description.md` 已生成 → 进入阶段 1.5
+7. 确认 `.plan/pr-description.md` 已生成 → 进入阶段 1.5
 
 ---
 
 ### 阶段 1.5: 方案对抗审查（plan-reviewer）
 
-**触发条件**：task.md 中任务数 ≥ 3 时执行。任务数 < 3 的小改动直接跳过，进入阶段 2。
+**触发条件**：.plan/task.md 中任务数 ≥ 3 时执行。任务数 < 3 的小改动直接跳过，进入阶段 2。
 
 **lead 操作：**
 
-1. 读取 task.md 内容，统计任务数量
+1. 读取 .plan/task.md 内容，统计任务数量
 2. spawn plan-reviewer（`subagent_type: code-architect`（项目 agent）, `team_name: backend-team`），发送指令：
 
 ```
 你是方案审查者，负责用独立视角挑战技术方案的完整性和合理性。
 
 ## 技术方案
-{task.md 完整内容}
+{.plan/task.md 完整内容}
 
 请从以下维度审查，只报告你认为**确实有问题**的点（没问题的不用列）：
 
 1. **遗漏检查**：任务列表是否遗漏了必要的步骤？（如：改了接口没改调用方、加了功能没加测试、改了数据结构没改序列化）
-2. **影响面低估**：改动范围是否低估？可探索代码库验证 task.md 中提到的文件路径和调用链
+2. **影响面低估**：改动范围是否低估？可探索代码库验证 .plan/task.md 中提到的文件路径和调用链
 3. **任务粒度**：是否有任务过大需要拆分？或过小可以合并？
 4. **技术决策盲点**：已确定的技术选型是否有明显更优的替代方案未被考虑？
 5. **验收标准可执行性**：每个任务的验收标准是否具体到可直接验证？
@@ -148,7 +148,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 | 审查结果 | lead 处理 |
 |----------|----------|
 | "审查通过" | 直接进入阶段 2 |
-| 有具体问题 | AskUserQuestion 展示问题清单，询问是否采纳 → 采纳的修改更新到 task.md → 进入阶段 2 |
+| 有具体问题 | AskUserQuestion 展示问题清单，询问是否采纳 → 采纳的修改更新到 .plan/task.md → 进入阶段 2 |
 
 4. shutdown plan-reviewer → 进入阶段 2
 
@@ -163,7 +163,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 跳过条件：已存在计划文件（`~/.claude/plans/*.md`）时跳过，直接进入 2b。
 
 1. 调用 `Skill("plan-init")` 执行任务分解和审批
-2. 将 `task.md` 作为需求文档输入
+2. 将 `.plan/task.md` 作为需求文档输入
 3. skill 内的门控处理：
    - 核心目标确认：基于阶段 1 已确认的方案，直接确认
    - 技术决策：基于阶段 1 已确认的决策，直接确认
@@ -173,8 +173,8 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 
 1. 调用 `Skill("plan-write")` 将计划写入项目文件
 2. skill 内的门控处理：
-   - 文件冲突（features.json 已存在）：选择"覆盖"
-3. 确认 `features.json` 和 `dev-*.log` 存在 → 进入阶段 3
+   - 文件冲突（.plan/features.json 已存在）：选择"覆盖"
+3. 确认 `.plan/features.json` 和 `.plan/dev-*.log` 存在 → 进入阶段 3
 
 **优势**：lead 在阶段 1 亲历了方案预研全过程，此阶段大部分门控可基于已有上下文直接通过，无需重复询问用户。plan-init 和 plan-write 分离后，中断恢复更精确：计划已审批但未写入时可直接从 2b 恢复。
 
@@ -189,7 +189,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 请循环执行 /plan-next，直到所有任务的 passes 都为 true。
 
 执行步骤：
-1. 读取 features.json，找到第一个 passes: false 的任务
+1. 读取 .plan/features.json，找到第一个 passes: false 的任务
 2. 调用 Skill("plan-next") 执行该任务
 3. 按 TDD 流程完成（READ → EXPLORE → PLAN → RED → IMPLEMENT → GREEN → COMMIT）
 4. 每完成一个任务，SendMessage 通知 lead 进度（已完成/总数）
@@ -199,7 +199,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 注意事项：
 - TDD 流程内的常规门控（EXPLORE→PLAN、PLAN→RED 确认）：自主跳过
 - 关键技术决策（实现方式有多个方案、不确定用户意图时）：SendMessage 给 lead
-- features.json 在此阶段只有你一个 agent 读写，无并发问题
+- .plan/features.json 在此阶段只有你一个 agent 读写，无并发问题
 
 卡住策略：
 - 同一任务内测试连续失败 3 次：SendMessage 给 lead，附带错误日志和已尝试的方案
@@ -209,7 +209,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 ```
 
 **lead 验证：**
-- 收到进度通知后确认 features.json 状态
+- 收到进度通知后确认 .plan/features.json 状态
 - 收到关键决策请求 → AskUserQuestion 询问用户 → SendMessage 转发答案
 - 收到卡住上报 → AskUserQuestion 展示错误详情，询问用户决策（修复方向 / 跳过任务 / 调整方案）
 - 全部 `passes: true` → 标记任务完成 → shutdown developer → 进入阶段 3.5
@@ -303,7 +303,7 @@ spawn polisher（`subagent_type: general-purpose`, `mode: bypassPermissions`, `t
 
 1. 准备 CR 材料：
    - 执行 `git diff main...HEAD`（或合适的 base branch），保存 diff 内容
-   - 读取 `pr-description.md`
+   - 读取 `.plan/pr-description.md`
    - **安全审查触发判断**：检查 diff 中是否包含安全相关关键词（`auth`、`login`、`password`、`token`、`secret`、`key`、`middleware`、`interceptor`、`filter`、`sql`、`query`、`exec`、`.env`、`config`）
 
 2. 并行 spawn reviewer（审查标准详见 `references/reviewer-prompt.md`）：
@@ -347,7 +347,7 @@ spawn（`subagent_type: code-reviewer`（项目 agent）, `team_name: backend-te
 你只有以下信息，禁止读取任何项目文件或探索代码库：
 
 ## PR 描述
-{pr-description.md 内容}
+{.plan/pr-description.md 内容}
 
 ## Code Diff
 {git diff 输出}
@@ -437,10 +437,10 @@ spawn（`subagent_type: security-reviewer`（项目 agent）, `team_name: backen
 | CR 发现 | CRITICAL:X HIGH:X MEDIUM:X LOW:X |
 
 ### 产出文件
-- `task.md` - 技术方案文档
-- `pr-description.md` - PR 描述（阶段 1 生成）
-- `features.json` - 任务状态（所有 passes: true）
-- `dev-YYYY-MM-DD.log` - 开发日志
+- `.plan/task.md` - 技术方案文档
+- `.plan/pr-description.md` - PR 描述（阶段 1 生成）
+- `.plan/features.json` - 任务状态（所有 passes: true）
+- `.plan/dev-YYYY-MM-DD.log` - 开发日志
 - 代码实现 + 测试文件
 
 ### 后续建议

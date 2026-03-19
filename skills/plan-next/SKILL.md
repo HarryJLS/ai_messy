@@ -1,6 +1,6 @@
 ---
 name: plan-next
-description: 自动循环执行所有待处理任务（passes: false），失败跳过并继续，最终输出汇总报告。当用户说 "/plan-next"、"执行下一个任务"、"继续任务"、"开始开发" 时触发。必须先运行 /plan-init 创建 features.json。执行 READ → EXPLORE → PLAN → RED → IMPLEMENT → GREEN → REFACTOR → COMMIT 八阶段循环。
+description: 自动循环执行所有待处理任务（passes: false），失败跳过并继续，最终输出汇总报告。当用户说 "/plan-next"、"执行下一个任务"、"继续任务"、"开始开发" 时触发。必须先运行 /plan-init 创建 .plan/features.json。执行 READ → EXPLORE → PLAN → RED → IMPLEMENT → GREEN → REFACTOR → COMMIT 八阶段循环。
 ---
 
 # Plan Next
@@ -11,16 +11,16 @@ description: 自动循环执行所有待处理任务（passes: false），失败
 
 ### 初始化
 
-1. 读取 `features.json`，统计总任务数、待处理数（`passes: false` 且 `skipped` 不为 `true`）
-2. 如果 `features.json` 不存在：输出"⚠️ 任务未写入，请先运行 /plan-init 初始化项目" → 停止
+1. 读取 `.plan/features.json`，统计总任务数、待处理数（`passes: false` 且 `skipped` 不为 `true`）
+2. 如果 `.plan/features.json` 不存在：输出"⚠️ 任务未写入，请先运行 /plan-init 初始化项目" → 停止
 3. 输出循环开始信息："🔄 开始循环执行，共 N 个任务，待处理 M 个"
 
 ### 失败处理
 
 当任务在任意阶段失败（测试无法通过、实现遇到阻塞等）：
 
-1. 在 `features.json` 中为该任务添加 `"skipped": true` 和 `"skipReason": "失败原因描述"`
-2. 写跳过日志到 `dev-YYYY-MM-DD.log`
+1. 在 `.plan/features.json` 中为该任务添加 `"skipped": true` 和 `"skipReason": "失败原因描述"`
+2. 写跳过日志到 `.plan/dev-YYYY-MM-DD.log`
 3. 输出："⏭️ 任务 [ID] 跳过：[原因]，继续下一个"
 4. **继续下一个任务**，不中断循环
 
@@ -59,7 +59,7 @@ description: 自动循环执行所有待处理任务（passes: false），失败
 
 ## 日志格式
 
-追加到 `dev-YYYY-MM-DD.log`：
+追加到 `.plan/dev-YYYY-MM-DD.log`：
 
 ```
 [时间戳] [阶段] Task N: 一句话概述
@@ -91,7 +91,7 @@ description: 自动循环执行所有待处理任务（passes: false），失败
 
 ## 阶段 1: READ
 
-1. 读取 `features.json`，找到第一个 `passes: false` 且 `skipped` 不为 `true` 的任务
+1. 读取 `.plan/features.json`，找到第一个 `passes: false` 且 `skipped` 不为 `true` 的任务
 2. 如果没有：退出循环，进入汇总报告
 3. 宣布："开始任务 [ID]: [描述]（第 X/N 个）"
 
@@ -242,7 +242,7 @@ description: 自动循环执行所有待处理任务（passes: false），失败
 
 ## 阶段 8: COMMIT
 
-1. 设置 `passes: true` 在 features.json
+1. 设置 `passes: true` 在 .plan/features.json
 2. 写最终日志
 3. 输出进度："✅ 任务 [ID] 完成（已完成 X/N）"
 4. **返回阶段 1**，继续下一个待处理任务
@@ -254,13 +254,13 @@ description: 自动循环执行所有待处理任务（passes: false），失败
 1. ✅ 测试通过（RED → GREEN → REFACTOR）
 2. ✅ `acceptance` 全部满足
 3. ✅ `passes: true` 已设置
-4. ✅ `dev-YYYY-MM-DD.log` 中包含该任务的 3-4 条日志
+4. ✅ `.plan/dev-YYYY-MM-DD.log` 中包含该任务的 3-4 条日志
 
 ## 恢复指南
 
 ```
-1. 读 features.json → 找到当前任务
-2. 读 dev-YYYY-MM-DD.log → 搜索该 Task ID 的最后一条日志 → 查看"状态"和"下一步"
+1. 读 .plan/features.json → 找到当前任务
+2. 读 .plan/dev-YYYY-MM-DD.log → 搜索该 Task ID 的最后一条日志 → 查看"状态"和"下一步"
 3. 从"下一步"继续执行
 ```
 

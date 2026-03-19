@@ -69,7 +69,7 @@ npx playwright --version
 
 按优先级获取：
 1. 用户通过参数指定的 URL 列表
-2. `task.md` 中的页面/路由列表
+2. `.plan/task.md` 中的页面/路由列表
 3. 扫描 `src/pages/` 或 `src/app/` 目录自动发现路由
 4. 默认仅验证 `/`（首页）
 

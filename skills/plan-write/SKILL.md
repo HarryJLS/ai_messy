@@ -19,14 +19,18 @@ description: 读取 /plan-init 生成的计划文件，将任务列表写入 fea
 
 ### 步骤 2: 检查现有文件
 
-检查项目根目录是否已存在 `features.json`。
+检查是否已存在 `.plan/features.json`。
 
 - 如果存在且非空，询问用户：覆盖（备份后）/ 追加 / 取消
 - 如果不存在或为空，直接创建
 
 ### 步骤 3: 写入文件（按顺序执行全部操作）
 
-**操作 1：Write 工具 → 创建 `dev-YYYY-MM-DD.log`**（YYYY-MM-DD 为当天日期）
+**操作 0：确保 `.plan/` 目录存在**
+
+使用 Bash 工具执行 `mkdir -p .plan`，确保目录存在。
+
+**操作 1：Write 工具 → 创建 `.plan/dev-YYYY-MM-DD.log`**（YYYY-MM-DD 为当天日期）
 
 ```
 === Agent 初始化日志 ===
@@ -46,7 +50,7 @@ description: 读取 /plan-init 生成的计划文件，将任务列表写入 fea
 ---
 [ISO 时间戳] [Init] Agent 框架设置
 ├─ Context: 用户初始化 Agent 进行结构化开发工作流
-├─ Files: features.json（待创建）| dev-YYYY-MM-DD.log（本文件）
+├─ Files: .plan/features.json（待创建）| .plan/dev-YYYY-MM-DD.log（本文件）
 ├─ Changes: 设置统一日志架构
 ├─ Tech: JSON 用于任务存储 | 统一日志文件简化管理
 ├─ Decision: 统一日志架构 → 简化管理，结构化标签保证可检索
@@ -54,7 +58,7 @@ description: 读取 /plan-init 生成的计划文件，将任务列表写入 fea
 ---
 ```
 
-**操作 2：Write 工具 → 创建 `features.json`（写入完整任务列表）**
+**操作 2：Write 工具 → 创建 `.plan/features.json`（写入完整任务列表）**
 
 将从计划文件中提取的任务列表 JSON 写入。格式示例：
 ```json
@@ -71,21 +75,21 @@ description: 读取 /plan-init 生成的计划文件，将任务列表写入 fea
 ]
 ```
 
-**操作 3：Edit 工具 → 追加任务分解日志到 `dev-YYYY-MM-DD.log`**
+**操作 3：Edit 工具 → 追加任务分解日志到 `.plan/dev-YYYY-MM-DD.log`**
 ```
 [ISO 时间戳] [Init] 任务分解完成
 ├─ Context: 用户确认任务列表
 ├─ Tasks: [列出所有任务 ID 和简述]
-├─ Files: features.json（已写入 N 个任务）
+├─ Files: .plan/features.json（已写入 N 个任务）
 └─ Result: 任务已持久化，等待执行
 ---
 ```
 
-**操作 4：Edit 工具 → 追加初始化总结到 `dev-YYYY-MM-DD.log`**
+**操作 4：Edit 工具 → 追加初始化总结到 `.plan/dev-YYYY-MM-DD.log`**
 ```
 [ISO 时间戳] [Init] 初始化完成 - 准备执行
 ├─ Context: 框架设置完成，所有状态文件已创建
-├─ Files: features.json（N 个任务）| dev-YYYY-MM-DD.log（3 条日志）
+├─ Files: .plan/features.json（N 个任务）| .plan/dev-YYYY-MM-DD.log（3 条日志）
 ├─ Changes: 完成初始化 - 任务已定义，日志框架已设置
 ├─ Tech: 统一日志架构 | 基于 JSON 的任务管理
 ├─ Decision: 所有任务初始 passes:false → 需验证后才能标记完成
@@ -99,11 +103,11 @@ description: 读取 /plan-init 生成的计划文件，将任务列表写入 fea
 ✅ 初始化完成！
 
 已创建:
-• features.json - [N] 个任务已写入（全部 passes: false）
-• dev-YYYY-MM-DD.log - 初始化日志已记录
+• .plan/features.json - [N] 个任务已写入（全部 passes: false）
+• .plan/dev-YYYY-MM-DD.log - 初始化日志已记录
 
 日志架构:
-→ 所有日志统一写入 dev-YYYY-MM-DD.log
+→ 所有日志统一写入 .plan/dev-YYYY-MM-DD.log
 → 通过 [Phase] Task N: 标签区分来源，精准检索
 
 下一步:

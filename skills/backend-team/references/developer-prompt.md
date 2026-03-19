@@ -6,7 +6,7 @@
 
 ## 执行步骤
 
-1. 读取 features.json，找到第一个 passes: false 的任务
+1. 读取 .plan/features.json，找到第一个 passes: false 的任务
 2. 调用 Skill("plan-next") 执行该任务
 3. 按 TDD 流程完成（READ → EXPLORE → PLAN → RED → IMPLEMENT → GREEN → COMMIT）
 4. 每完成一个任务，SendMessage 通知 lead 进度（已完成/总数）
@@ -17,7 +17,7 @@
 
 - TDD 流程内的常规门控（EXPLORE→PLAN、PLAN→RED 确认）：自主跳过
 - 关键技术决策（实现方式有多个方案、不确定用户意图时）：SendMessage 给 lead
-- features.json 在此阶段只有你一个 agent 读写，无并发问题
+- .plan/features.json 在此阶段只有你一个 agent 读写，无并发问题
 
 ## 卡住策略
 
