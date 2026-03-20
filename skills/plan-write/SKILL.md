@@ -1,11 +1,11 @@
 ---
 name: plan-write
-description: 读取 /plan-init 生成的计划文件，将任务列表写入 features.json 并创建开发日志。当用户说 "/plan-write"、"写入任务"、"完成初始化" 时触发。必须在 /plan-init 审批后运行。
+description: 读取 /plan-init 生成的计划文件，将任务列表写入 .plan/features.json 并创建开发日志。当用户说 "/plan-write"、"写入任务"、"完成初始化" 时触发。必须在 /plan-init 审批后运行。
 ---
 
 # Plan Write
 
-读取计划文件，写入 features.json 和 dev log，完成初始化。
+读取计划文件，写入 .plan/features.json 和 .plan/dev log，完成初始化。
 
 ## 协议
 
