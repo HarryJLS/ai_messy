@@ -227,7 +227,8 @@
 
 ## Commit 规范
 
-- 每天首次 commit 时，须将 `.claude-plugin/plugin.json` 的 `version` 补丁号 +1（如 `1.0.0` → `1.0.1`），同一天内多次 commit 不再递增
+- 每天首次 commit 时，须将 `.claude-plugin/plugin.json` 的 `version` 号 +1，同一天内多次 commit 不再递增
+- 版本号格式：`YYYYMMDD.number`（如 `20260321.1`），每天首次提交时日期部分更新为当天，number 从 1 开始；同一天若跨次提交已递增过则不再变
 
 ## 设计原则
 
