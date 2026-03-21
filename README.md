@@ -74,8 +74,8 @@ READ → EXPLORE → PLAN → RED 🔴 → IMPLEMENT → GREEN 🟢 → COMMIT
 | 命令 | 用途 |
 |------|------|
 | `/unit-test` | 自动检测语言，生成符合最佳实践的单元测试 |
-| `/e2e-test` | 前端 E2E 验证（启动 Dev Server → Playwright 逐页面验证 → 截图 → 报告） |
-| `/api-verify` | 后端 API 运行时验证（启动服务 → 逐接口验证状态码和响应结构 → 报告） |
+| `/backend-test` | 后端测试验证（单元测试 + API 契约验证 + 验收标准检查），基于 features.json 驱动 |
+| `/frontend-test` | 前端测试验证（已有测试 + E2E 验证 + 验收标准检查），基于 features.json 驱动 |
 
 ### Git 工具
 
@@ -231,8 +231,8 @@ Research & Reuse（lead）
 
 ```bash
 /unit-test           # 生成单元测试
-/e2e-test            # 前端 E2E 验证
-/api-verify          # 后端 API 验证
+/backend-test        # 后端测试验证（基于 features.json）
+/frontend-test       # 前端测试验证（基于 features.json）
 ```
 
 ---
@@ -260,8 +260,8 @@ ai_messy/
 │   ├── code-fixer/
 │   ├── code-simplifier/
 │   ├── unit-test/
-│   ├── e2e-test/
-│   ├── api-verify/
+│   ├── backend-test/
+│   ├── frontend-test/
 │   ├── git-quick/
 │   ├── git-worktree/
 │   ├── learn/

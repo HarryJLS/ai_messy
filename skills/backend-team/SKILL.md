@@ -221,7 +221,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 | Coverage | `mvn test -Pcoverage` | `go test -cover ./...` | `npm test -- --coverage` | `pytest --cov` |
 | Security | 硬编码扫描 | 硬编码扫描 | `npm audit` | 硬编码扫描 |
 | Diff | `git diff --stat` | `git diff --stat` | `git diff --stat` | `git diff --stat` |
-| API Verify | 调用 `Skill("api-verify")`（仅当项目含 HTTP 服务时） | 服务可启动、接口无 5xx、响应结构正确 |
+| API 验证 | 调用 `Skill("backend-test")`（仅当项目含 HTTP 服务时） | 服务可启动、接口无 5xx、响应结构正确 |
 
 2. 输出验证报告：
 

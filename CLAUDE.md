@@ -37,8 +37,8 @@
 | `/code-fixer` | 自动修复代码风格问题（保留变量名不变） |
 | `/code-simplifier` | 简化和优化代码 |
 | `/unit-test` | 生成单元测试 |
-| `/e2e-test` | 前端 E2E 验证（启动服务 → Playwright 验证 → 截图 → 报告） |
-| `/api-verify` | 后端 API 运行时验证（启动服务 → 逐接口验证 → 报告） |
+| `/backend-test` | 后端测试验证（单元测试 + API 契约验证 + 验收标准检查），基于 features.json 驱动 |
+| `/frontend-test` | 前端测试验证（已有测试 + E2E 验证 + 验收标准检查），基于 features.json 驱动 |
 
 ### Git 工具
 

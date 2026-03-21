@@ -312,7 +312,7 @@ developer 通知后端任务完成后，lead 执行后端验证：
 | Build | `mvn compile` | `go build ./...` | `npm run build` | - |
 | Lint | checkstyle/spotbugs | `go vet ./...` | `npm run lint` | `ruff check .` |
 | Test | `mvn test` | `go test ./...` | `npm test` | `pytest` |
-| API Verify | 调用 `Skill("api-verify")`（仅当项目含 HTTP 服务时） |
+| API Verify | 调用 `Skill("backend-test")`（仅当项目含 HTTP 服务时） |
 
 处理结果：
 
@@ -336,7 +336,7 @@ developer 通知前端任务完成后，lead 执行前端验证：
 | Lint | `npm run lint` 或项目配置的 lint 命令 | ESLint 无 error |
 | Type Check | `npx tsc --noEmit`（TS 项目）或 `npx vue-tsc --noEmit`（Vue3 + TS） | 类型检查通过 |
 | Test | `npm test` 或 `npx vitest run` 或 `npx jest` | 测试全部通过 |
-| E2E | 调用 `Skill("e2e-test")` | 页面可访问、无控制台错误 |
+| E2E | 调用 `Skill("frontend-test")` | 页面可访问、无控制台错误 |
 
 处理结果同 3b。
 
@@ -361,7 +361,7 @@ developer 通知前端任务完成后，lead 执行前端验证：
 | Test | `mvn test` | `go test ./...` | `npm test` | `pytest` |
 | Coverage | `mvn test -Pcoverage` | `go test -cover ./...` | `npm test -- --coverage` | `pytest --cov` |
 | Security | 硬编码扫描 | 硬编码扫描 | `npm audit` | 硬编码扫描 |
-| API Verify | 调用 `Skill("api-verify")`（仅当项目含 HTTP 服务时） |
+| API Verify | 调用 `Skill("backend-test")`（仅当项目含 HTTP 服务时） |
 
 **前端验证**：
 
@@ -373,7 +373,7 @@ developer 通知前端任务完成后，lead 执行前端验证：
 | Test | `npm test` 或 `npx vitest run` |
 | Coverage | `npm test -- --coverage` |
 | Security | `npm audit --audit-level=high` |
-| E2E | 调用 `Skill("e2e-test")` |
+| E2E | 调用 `Skill("frontend-test")` |
 
 **通用验证**：
 
