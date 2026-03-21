@@ -302,37 +302,55 @@ ai_messy/
 │   ├── code-reviewer.md
 │   └── security-reviewer.md
 ├── skills/                # 所有 Claude Code Skills (31 个)
-│   ├── plan-init/
-│   ├── plan-write/
-│   ├── plan-next/
-│   ├── backend-team/
-│   ├── backend-single/
-│   ├── framework-team/
-│   ├── frontend-team/
-│   ├── frontend-single/
-│   ├── fullstack-team/
-│   ├── fullstack-single/
-│   ├── code-review/
-│   ├── code-fixer/
-│   ├── code-simplifier/
-│   ├── unit-test/
-│   ├── backend-test/
-│   ├── frontend-test/
-│   ├── git-quick/
-│   ├── git-worktree/
-│   ├── learn/
-│   ├── instinct/
-│   ├── add_or_update_skill/
-│   ├── setup-permissions/
-│   ├── claude-md-manager/
-│   ├── skill-creator/
-│   ├── find-skills/
-│   ├── frontend-design/
-│   ├── ui-ux-pro-max/
-│   ├── markitdown/
-│   ├── mcp-builder/
-│   ├── notebooklm-skill/
-│   └── planning-with-files/
+│   │
+│   ├── # ── 任务规划 ──
+│   ├── plan-init/             # 需求分析 + 任务分解（三档自适应）
+│   ├── plan-write/            # 计划写入 features.json
+│   ├── plan-next/             # TDD 循环执行任务
+│   │
+│   ├── # ── 后端 ──
+│   ├── backend-team/          # 后端团队编排（多 Agent）
+│   ├── backend-single/        # 后端精简编排（跨会话）
+│   ├── backend-test/          # 后端测试验证
+│   │
+│   ├── # ── 前端 ──
+│   ├── frontend-team/         # 前端团队编排（多 Agent）
+│   ├── frontend-single/       # 前端精简编排（跨会话）
+│   ├── frontend-test/         # 前端测试验证
+│   ├── frontend-design/       # 前端界面设计
+│   ├── ui-ux-pro-max/         # UI/UX 设计智能
+│   │
+│   ├── # ── 全栈 ──
+│   ├── fullstack-team/        # 全栈团队编排（多 Agent）
+│   ├── fullstack-single/      # 全栈精简编排（跨会话）
+│   │
+│   ├── # ── 新项目 ──
+│   ├── framework-team/        # 新项目脚手架编排
+│   ├── mcp-builder/           # MCP Server 创建指南
+│   │
+│   ├── # ── 代码质量 ──
+│   ├── code-review/           # 代码审查
+│   ├── code-fixer/            # 代码规范修复
+│   ├── code-simplifier/       # 代码简化优化
+│   ├── unit-test/             # 单元测试生成
+│   │
+│   ├── # ── Git 工具 ──
+│   ├── git-quick/             # 快捷 pull/commit/push
+│   ├── git-worktree/          # Git worktree 管理
+│   │
+│   ├── # ── 持续学习 ──
+│   ├── learn/                 # 手动提取可复用模式
+│   ├── instinct/              # 自动观察 + 原子级学习
+│   │
+│   ├── # ── 工具与管理 ──
+│   ├── add_or_update_skill/   # Skill 多平台同步
+│   ├── setup-permissions/     # 权限白名单配置
+│   ├── claude-md-manager/     # CLAUDE.md 管理
+│   ├── skill-creator/         # 创建新 Skill
+│   ├── find-skills/           # 发现和安装 Skill
+│   ├── markitdown/            # 文件转 Markdown
+│   ├── notebooklm-skill/      # 查询 NotebookLM
+│   └── planning-with-files/   # 文件化规划
 ├── common/                # 共享参考文档
 │   ├── spock-test-guide.md
 │   ├── go_test_spock.md
