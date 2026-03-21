@@ -21,7 +21,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 | 安全审查者 | security-reviewer | security-reviewer（项目 agent） | - | 安全审查，聚焦漏洞检测（条件触发） |
 
 **设计说明**：
-- lead 亲自执行 `/plan-preview` + `/plan-init` + `/plan-write`：方案预研、任务分解和计划写入是项目决策的核心环节，lead 直接与用户交互，避免决策转发导致的上下文丢失和延迟
+- lead 亲自执行 `/plan-init` + `/plan-write`：方案预研、任务分解和计划写入是项目决策的核心环节，lead 直接与用户交互，避免决策转发导致的上下文丢失和延迟
 - polisher 合并 simplifier + fixer：都是后处理，顺序执行
 - reviewer / blind-reviewer / plan-reviewer 使用项目级 agent 定义（`agents/` 目录），不依赖外部 plugin
 - 代码探索量特别大时，lead 可用 Task 工具 spawn 临时 Explore agent 做深度探索，结果拿回来自己决策
@@ -54,7 +54,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 | 文件状态 | 跳入阶段 |
 |----------|----------|
 | 无 `.plan/task.md`、无 `.plan/features.json` | 阶段 1（完整流程） |
-| 有 `.plan/task.md`、无计划文件（`~/.claude/plans/*.md`）、无 `.plan/features.json` | 阶段 2（plan-init + plan-write） |
+| 有 `.plan/task.md`、无计划文件（`~/.claude/plans/*.md`）、无 `.plan/features.json` | 阶段 2（plan-init 标准模式 + plan-write） |
 | 有 `.plan/task.md`、有计划文件、无 `.plan/features.json` | 阶段 2b（仅 plan-write） |
 | 有 `.plan/features.json`、有未完成任务 | 阶段 3（跳过初始化） |
 | 有 `.plan/features.json`、所有 `passes: true`、dev log 中无 `[Verification-Done]` 标记 | 阶段 3.5（全量验证） |
@@ -80,16 +80,16 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 - 检查项目现有代码库中是否已有类似实现可复用
 - 将发现记录到 .plan/task.md 的 references 字段
 
-**1. 方案预研**
+**1. 方案预研 + 任务分解**
 
-1. 调用 `Skill("plan-preview")` 执行方案预研
+1. 调用 `Skill("plan-init")` 执行方案预研和任务分解（plan-init 会根据输入清晰度自动选择深度模式或标准模式）
 2. 将用户的完整原始输入（包括文件路径/链接）和 Research 阶段的发现作为上下文传入
 3. 如有参考项目：
    - 先探索参考项目的相关代码流程，理解其实现模式
    - 将参考项目的关键文件路径写入 .plan/task.md 任务的 references 字段
    - 在任务描述中说明与参考项目的差异点
 4. skill 内的所有门控（需求确认、代码探索确认、技术决策）由 lead 直接与用户交互完成
-5. 确认 `.plan/task.md` 已生成
+5. 确认 `.plan/task.md` 已生成，确认计划文件已生成（`~/.claude/plans/*.md`）
 6. 从 .plan/task.md 提取关键信息，生成 `.plan/pr-description.md`：
 
 ```markdown
@@ -154,29 +154,18 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 
 ---
 
-### 阶段 2: 项目初始化（lead 自己执行）
+### 阶段 2: 计划写入（lead 自己执行）
 
 **lead 操作：**
 
-**2a. 任务分解（plan-init）**
-
-跳过条件：已存在计划文件（`~/.claude/plans/*.md`）时跳过，直接进入 2b。
-
-1. 调用 `Skill("plan-init")` 执行任务分解和审批
-2. 将 `.plan/task.md` 作为需求文档输入
-3. skill 内的门控处理：
-   - 核心目标确认：基于阶段 1 已确认的方案，直接确认
-   - 技术决策：基于阶段 1 已确认的决策，直接确认
-4. 确认计划文件已生成（`~/.claude/plans/*.md`）
-
-**2b. 计划写入（plan-write）**
+跳过条件：已存在 `.plan/features.json` 时跳过，直接进入阶段 3。
 
 1. 调用 `Skill("plan-write")` 将计划写入项目文件
 2. skill 内的门控处理：
    - 文件冲突（.plan/features.json 已存在）：选择"覆盖"
 3. 确认 `.plan/features.json` 和 `.plan/dev-*.log` 存在 → 进入阶段 3
 
-**优势**：lead 在阶段 1 亲历了方案预研全过程，此阶段大部分门控可基于已有上下文直接通过，无需重复询问用户。plan-init 和 plan-write 分离后，中断恢复更精确：计划已审批但未写入时可直接从 2b 恢复。
+**优势**：lead 在阶段 1 亲历了方案预研和任务分解全过程，plan-write 阶段无需重复询问用户。
 
 ---
 

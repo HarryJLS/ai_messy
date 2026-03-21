@@ -9,7 +9,7 @@ description: 精简版后端开发编排，顺序执行四个核心 skill（plan
 
 **前置条件**：需先运行 `/plan-init` 完成任务分解并审批。
 
-**与 backend-team 的区别**：去掉方案预研（plan-preview）、方案审查（plan-reviewer）、全量验证（build-fixer）、多维 CR（reviewer/blind-reviewer/security-reviewer）、pr-description.md 生成、De-Sloppify 检查。保留核心开发流水线。
+**与 backend-team 的区别**：去掉方案预研（plan-init 深度模式）、方案审查（plan-reviewer）、全量验证（build-fixer）、多维 CR（reviewer/blind-reviewer/security-reviewer）、pr-description.md 生成、De-Sloppify 检查。保留核心开发流水线。
 
 ## 流水线概览
 

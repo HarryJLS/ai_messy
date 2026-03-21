@@ -24,15 +24,14 @@ Claude Code Plugin — AI Agent 工作流和开发指南技能合集（中文）
 
 | 命令 | 用途 |
 |------|------|
-| `/plan-preview` | 方案预研，输出 `task.md` 供 `/plan-init` 使用 |
-| `/plan-init` | 需求分析和任务分解，生成计划文件供审批 |
+| `/plan-init` | 需求分析和任务分解（三档自适应：模糊需求→深度模式，明确文档→标准模式，已有JSON→极速模式） |
 | `/plan-write` | 读取审批后的计划文件，写入 `features.json` 和 `dev-YYYY-MM-DD.log` |
 | `/plan-next` | 执行下一个任务（TDD: RED → GREEN → COMMIT） |
 
 **手动执行流程：**
 
 ```
-/plan-preview → /plan-init → /plan-write → /plan-next (循环)
+/plan-init → /plan-write → /plan-next (循环)
 ```
 
 **单个任务执行：**
@@ -215,8 +214,7 @@ Research & Reuse（lead）
 ### 手动逐步执行
 
 ```bash
-/plan-preview        # 方案预研（可选）
-/plan-init           # 需求分析和任务分解
+/plan-init           # 需求分析和任务分解（自适应深度）
 /plan-write          # 写入任务列表
 /plan-next           # 执行任务（循环）
 ```
@@ -252,7 +250,6 @@ ai_messy/
 │   ├── code-reviewer.md
 │   └── security-reviewer.md
 ├── skills/                # 所有 Claude Code Skills (27 个)
-│   ├── plan-preview/
 │   ├── plan-init/
 │   ├── plan-write/
 │   ├── plan-next/
