@@ -42,15 +42,36 @@ READ → EXPLORE → PLAN → RED 🔴 → IMPLEMENT → GREEN 🟢 → COMMIT
 
 ### Agent 团队编排
 
-三种团队编排模式，自动编排完整开发流水线，无需手动逐个调用。
+多 Agent 团队编排模式，自动编排完整开发流水线，无需手动逐个调用。
 
 | 命令 | 用途 | 适用场景 |
 |------|------|----------|
-| `/backend-team` | 全流程编排：预研 + 初始化 + 开发 + 简化 + 多维 CR | 现有项目开发 |
+| `/backend-team` | 全流程编排：预研 + 初始化 + 开发 + 简化 + 多维 CR | 现有后端项目开发 |
 | `/framework-team` | 脚手架编排：架构设计 + 脚手架 + TDD + 验证 + CR | 从零搭建新项目 |
 | `/frontend-team` | 前端编排：设计系统 + UI 方案 + 开发 + UI/UX 打磨 + CR | 前端开发（React/Vue3/Vue2） |
+| `/fullstack-team` | 全栈编排：后端预研 + 前端设计 → 后端开发 → 前端对接 → 打磨 → CR | 全栈开发 |
 
 > 详见下方 [团队编排详情](#团队编排详情) 章节。
+
+### 精简版编排（Single 模式）
+
+无 Agent Team、无方案预研、无 CR，适合跨会话独立执行。需先运行 `/plan-init` 完成任务分解。
+
+| 命令 | 用途 | 适用场景 |
+|------|------|----------|
+| `/backend-single` | plan-write → plan-next 循环 → simplifier → fixer | 后端开发（自动按 domain 过滤） |
+| `/frontend-single` | plan-write → plan-next 循环 → UI/UX 检查 → simplifier → fixer | 前端开发（自动按 domain 过滤） |
+| `/fullstack-single` | plan-write → 后端 plan-next → 前端 plan-next → simplifier → fixer | 全栈开发（分两轮执行） |
+
+**推荐跨会话工作流：**
+
+```
+会话 A: /plan-init        → 分解任务（标记 domain + apiContracts）
+会话 B: /backend-single   → 执行 backend 任务
+会话 C: /frontend-single  → 执行 frontend 任务
+会话 D: /backend-test     → 后端测试验证
+会话 E: /frontend-test    → 前端测试验证
+```
 
 ### 代码质量
 
@@ -199,6 +220,28 @@ Research & Reuse（lead）
   → 报告
 ```
 
+### fullstack-team（全栈开发）
+
+面向全栈开发场景，合并后端预研 + 前端设计系统，按"先后端 API → 再前端对接"开发。详见 `skills/fullstack-team/SKILL.md`。
+
+**与 backend-team / frontend-team 的核心差异：** 任务通过 `domain` 字段区分 backend/frontend，阶段 1 合并后端预研和前端设计，开发阶段分两轮（先后端→验证→再前端→验证），后端任务含 `apiContracts` 定义前端需要的接口契约。
+
+**流水线：**
+
+```
+Research & Reuse（lead）
+  → 后端方案预研（lead）
+  → 前端设计系统（lead）
+  → 方案审查（plan-reviewer）
+  → 任务分解 + 计划写入（lead）
+  → 后端开发（developer）→ 后端验证（lead）
+  → 前端开发（developer）→ 前端验证（lead）
+  → 全量验证 + 自动修复（lead + build-fixer）
+  → 代码打磨（polisher）
+  → 多维代码审查（reviewer + blind-reviewer + security-reviewer）
+  → 报告
+```
+
 ---
 
 ## 快速开始
@@ -206,9 +249,10 @@ Research & Reuse（lead）
 ### 一键全流程开发
 
 ```bash
-/backend-team       # 现有项目开发
+/backend-team       # 现有后端项目开发
 /framework-team     # 从零搭建新项目
 /frontend-team      # 前端开发
+/fullstack-team     # 全栈开发
 ```
 
 ### 手动逐步执行
@@ -217,6 +261,14 @@ Research & Reuse（lead）
 /plan-init           # 需求分析和任务分解（自适应深度）
 /plan-write          # 写入任务列表
 /plan-next           # 执行任务（循环）
+```
+
+### 精简版跨会话执行
+
+```bash
+/backend-single      # 后端精简开发（自动过滤 domain=backend）
+/frontend-single     # 前端精简开发（自动过滤 domain=frontend）
+/fullstack-single    # 全栈精简开发（先后端再前端）
 ```
 
 ### 代码质量
@@ -249,13 +301,17 @@ ai_messy/
 │   ├── code-architect.md
 │   ├── code-reviewer.md
 │   └── security-reviewer.md
-├── skills/                # 所有 Claude Code Skills (27 个)
+├── skills/                # 所有 Claude Code Skills (31 个)
 │   ├── plan-init/
 │   ├── plan-write/
 │   ├── plan-next/
 │   ├── backend-team/
+│   ├── backend-single/
 │   ├── framework-team/
 │   ├── frontend-team/
+│   ├── frontend-single/
+│   ├── fullstack-team/
+│   ├── fullstack-single/
 │   ├── code-review/
 │   ├── code-fixer/
 │   ├── code-simplifier/
@@ -274,6 +330,7 @@ ai_messy/
 │   ├── frontend-design/
 │   ├── ui-ux-pro-max/
 │   ├── markitdown/
+│   ├── mcp-builder/
 │   ├── notebooklm-skill/
 │   └── planning-with-files/
 ├── common/                # 共享参考文档
