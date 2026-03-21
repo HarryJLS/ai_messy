@@ -249,13 +249,14 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 ```
 📝 任务拆解：
 
-任务 1: [任务标题] [complexity: small]
+任务 1: [任务标题] [domain: backend] [complexity: small]
 - 做什么：[具体描述，包含业务背景]
 - 为什么：[这个任务解决什么问题]
 - 改哪里：[精确到文件路径和方法名]
 - 怎么改：[实现思路，关键步骤]
 - 参考实现：[项目中可参考的类似代码路径]
 - 验收标准：[可执行的验证步骤]
+- API 契约：[全栈项目后端任务需列出前端会用到的接口]
 - 依赖：无
 ```
 
@@ -322,6 +323,7 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 ```json
 {
   "id": "1",
+  "domain": "backend|frontend",
   "dependsOn": [],
   "complexity": "small|medium|large|trivial",
   "category": "core|ui|feature|optimization|bugfix|refactor|middleware",
@@ -334,6 +336,7 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
     "dataFlow": "数据从哪来 → 经过什么处理 → 到哪去",
     "keyInterfaces": ["需要实现/调用的关键接口说明"]
   },
+  "apiContracts": [],
   "acceptance": ["验收标准1：可验证的结果"],
   "boundary": "可选：明确边界（只改什么，不改什么）",
   "test": "unit|integration|e2e|manual: 简述测试方法和关键用例",
@@ -342,6 +345,34 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
   "passes": false
 }
 ```
+
+**domain 字段**：
+- 纯后端/纯前端项目可省略（默认根据项目类型推断）
+- 全栈项目必须标注每个任务的 domain
+
+**apiContracts 字段**（全栈项目，后端任务专用）：
+
+当项目同时包含 backend 和 frontend 任务时，后端任务中新增或修改的接口需要在任务分解阶段就敲定契约，让前端任务可以基于确定的接口开发。
+
+```json
+"apiContracts": [
+  {
+    "method": "GET|POST|PUT|DELETE",
+    "path": "/api/users",
+    "description": "获取用户列表",
+    "request": {
+      "query": { "page": "number", "size": "number" },
+      "body": {}
+    },
+    "response": {
+      "code": 200,
+      "body": { "list": "User[]", "total": "number" }
+    }
+  }
+]
+```
+
+只需定义前端会用到的接口，已有且不变的接口无需重复。前端任务的 `implementationGuide.keyInterfaces` 应引用对应后端任务 ID 的 apiContracts。
 
 深度模式产出的任务自带 `implementationGuide`（来自步骤 4 的代码探索）；标准模式中 `implementationGuide` 为可选，有就填。
 

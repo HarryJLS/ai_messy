@@ -58,6 +58,7 @@
 [
   {
     "id": "1",
+    "domain": "backend",
     "dependsOn": [],
     "complexity": "small|medium|large|trivial",
     "category": "core|ui|feature|optimization|bugfix|refactor|middleware",
@@ -70,6 +71,15 @@
       "dataFlow": "数据从哪来 → 经过什么处理 → 到哪去",
       "keyInterfaces": ["需要实现/调用的关键接口说明"]
     },
+    "apiContracts": [
+      {
+        "method": "GET",
+        "path": "/api/users",
+        "description": "获取用户列表",
+        "request": { "query": { "page": "number", "size": "number" } },
+        "response": { "code": 200, "body": { "list": "User[]", "total": "number" } }
+      }
+    ],
     "acceptance": ["验收标准1：具体验证步骤"],
     "boundary": "只改什么，不改什么",
     "test": "unit: 测试策略和关键用例",
