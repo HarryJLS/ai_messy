@@ -206,6 +206,10 @@
 
 `.plan/` 目录已在 `.gitignore` 中忽略。
 
+## Commit 规范
+
+- 每天首次 commit 时，须将 `.claude-plugin/plugin.json` 的 `version` 补丁号 +1（如 `1.0.0` → `1.0.1`），同一天内多次 commit 不再递增
+
 ## 设计原则
 
 - 防遗忘：通过日志条目恢复上下文
