@@ -38,9 +38,11 @@ description: 精简版后端开发编排，顺序执行四个核心 skill（plan
 | 文件状态 | 跳入阶段 |
 |----------|----------|
 | 无 `.plan/features.json` | 阶段 1（完整流程） |
-| 有 `.plan/features.json`、有未完成任务（`passes: false`） | 阶段 2（继续开发） |
-| 有 `.plan/features.json`、全部完成、dev log 中无 `[Polisher-Done]` 标记 | 阶段 3（代码优化） |
-| 有 `.plan/features.json`、全部完成、dev log 中有 `[Polisher-Done]` 标记 | 直接输出报告 |
+| 有 `.plan/features.json`、有目标范围内未完成任务（`passes: false`） | 阶段 2（继续开发） |
+| 有 `.plan/features.json`、目标范围内全部完成、dev log 中无 `[Polisher-Done]` 标记 | 阶段 3（代码优化） |
+| 有 `.plan/features.json`、目标范围内全部完成、dev log 中有 `[Polisher-Done]` 标记 | 直接输出报告 |
+
+**目标范围**：如果任务含 `domain` 字段，只看 `domain=backend` 的任务；否则看所有任务。
 
 ---
 
@@ -57,14 +59,18 @@ description: 精简版后端开发编排，顺序执行四个核心 skill（plan
 
 ### 阶段 2: 任务开发（plan-next 循环）
 
-循环执行 `Skill("plan-next")`，直到所有任务的 `passes` 都为 `true`。
+循环执行 `Skill("plan-next")`，直到目标范围内所有任务的 `passes` 都为 `true`。
+
+**domain 过滤**：读取 `.plan/features.json`，检查任务是否包含 `domain` 字段：
+- 如果任务有 `domain` 字段：只执行 `domain=backend` 的任务，跳过 `domain=frontend` 的任务
+- 如果任务没有 `domain` 字段：执行所有任务（纯后端项目兼容模式）
 
 **执行步骤：**
-1. 读取 `.plan/features.json`，确认还有 `passes: false` 的任务
+1. 读取 `.plan/features.json`，确认还有目标范围内 `passes: false` 的任务
 2. 调用 `Skill("plan-next")` 执行下一个任务
 3. plan-next 内部按 TDD 流程完成（RED → GREEN → COMMIT）
 4. 检查 `.plan/features.json`，如仍有未完成任务则继续循环
-5. 全部 `passes: true` → 进入阶段 3
+5. 目标范围内全部 `passes: true` → 进入阶段 3
 
 **卡住策略：**
 - 同一任务内测试连续失败 3 次：用 AskUserQuestion 向用户展示错误日志和已尝试的方案，请求决策
