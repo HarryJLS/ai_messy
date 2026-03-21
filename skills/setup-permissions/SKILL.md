@@ -1,6 +1,6 @@
 ---
 name: setup-permissions
-description: 为 Claude Code 配置 settings.local.json 权限白名单，免去每次 Edit/Write/Bash 手动确认。当用户说 "/setup-permissions"、"配置权限"、"设置权限"、"初始化权限"、"免确认" 时触发。支持指定目标目录，默认当前目录。
+description: 为 Claude Code 配置 settings.local.json 权限白名单，免去每次 Edit/Write/Read/Bash 手动确认。当用户说 "/setup-permissions"、"配置权限"、"设置权限"、"初始化权限"、"免确认" 时触发。支持指定目标目录，默认当前目录。
 ---
 
 # Setup Permissions
@@ -29,8 +29,11 @@ description: 为 Claude Code 配置 settings.local.json 权限白名单，免去
 {
   "permissions": {
     "allow": [
+      "Read",
       "Edit",
       "Write",
+      "Glob",
+      "Grep",
 
       "Bash(ls *)",
       "Bash(cat *)",
@@ -41,7 +44,6 @@ description: 为 Claude Code 配置 settings.local.json 权限白名单，免去
       "Bash(mkdir *)",
       "Bash(cp *)",
       "Bash(mv *)",
-      "Bash(rm *)",
       "Bash(grep *)",
       "Bash(echo *)",
       "Bash(touch *)",
@@ -104,6 +106,8 @@ description: 为 Claude Code 配置 settings.local.json 权限白名单，免去
 }
 ```
 
+**注意：`Bash(rm *)` 不在预设列表中 — 通用删除操作需用户手动授权。** 特定清理命令（如 `Bash(rm features*)`）可由用户按需添加。
+
 **合并逻辑：**
 
 1. 以上述预设列表为基础
@@ -123,12 +127,16 @@ description: 为 Claude Code 配置 settings.local.json 权限白名单，免去
 • 保留 {keptCount} 条已有权限
 • 总计 {totalCount} 条
 
-已配置权限:
-• Edit / Write — 文件读写
-• Bash 通用 — ls, cat, find, grep, sort, diff, sed, awk, curl 等
+已配置权限（自动授权）:
+• Read / Edit / Write — 文件读取/编辑/写入
+• Glob / Grep — 文件搜索/内容搜索
+• Bash 通用 — ls, cat, find, grep, sort, diff, sed, awk, curl, mkdir, cp, mv 等
 • Bash Git — git
 • Bash 构建 — mvn, gradle, go, npm, yarn, pnpm, bun, python, cargo, make, docker
 • WebSearch / WebFetch — 网页搜索与抓取
 • 飞书 MCP — 文档创建/编辑/搜索、白板、图片、表格、文件夹管理
 • Context7 MCP — 库文档查询
+
+需手动授权:
+• Bash(rm ...) — 删除操作需手动确认
 ```
