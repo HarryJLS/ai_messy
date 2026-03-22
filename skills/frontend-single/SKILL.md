@@ -86,23 +86,17 @@ description: 精简版前端开发编排，顺序执行四个核心 skill（plan
 
 ### 阶段 2: 前端开发（plan-next 循环）
 
-循环执行 `Skill("plan-next")`，直到目标范围内所有任务的 `passes` 都为 `true`。
+调用 `Skill("plan-next")` 并传入过滤参数，让 plan-next 只执行目标范围内的任务：
 
-**domain + app 过滤**：读取 `.plan/features.json`，按目标范围过滤任务：
-- 如果任务有 `domain` 字段：只执行 `domain=frontend` 的任务，跳过 `domain=backend` 的任务
-- 如果用户指定了 app：进一步只执行 `app` 匹配的任务
-- 如果任务没有 `domain` 字段：执行所有任务（纯前端项目兼容模式）
+- 传入 `domain=frontend`
+- 如果用户指定了 app（如 `/frontend-single admin-web`），同时传入 `app=admin-web`
 
-**appPath 路由**：如果任务含 `appPath` 字段，执行该任务前先 cd 到 appPath 指向的目录，任务完成后切回原目录。未指定 app 时，按任务中的 appPath 自动路由到各自的项目目录。
-
-**API 契约引用**：当前端任务依赖的后端任务（通过 `dependsOn`）包含 `apiContracts` 字段时，将这些接口契约作为上下文传给 plan-next，前端开发时直接按契约调用后端 API。
+plan-next 会自动按过滤条件循环执行所有匹配的任务，包括 appPath 路由和 apiContracts 感知。
 
 **执行步骤：**
-1. 读取 `.plan/features.json`，确认还有目标范围内 `passes: false` 的任务
-2. 调用 `Skill("plan-next")` 执行下一个任务
-3. plan-next 内部按 TDD 流程完成（RED → GREEN → COMMIT）
-4. 检查 `.plan/features.json`，如仍有未完成任务则继续循环
-5. 目标范围内全部 `passes: true` → 进入阶段 3
+1. 调用 `Skill("plan-next")`，传入 domain=frontend（+ 可选 app 参数）
+2. plan-next 内部按 TDD 流程循环完成所有匹配任务
+3. plan-next 循环结束后 → 进入阶段 3
 
 **前端专项规则（在 plan-next 执行时遵循）：**
 - 组件实现时按框架约定组织文件（React: 组件文件夹模式，Vue: SFC 单文件组件）

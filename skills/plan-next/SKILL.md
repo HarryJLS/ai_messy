@@ -9,11 +9,28 @@ description: 自动循环执行所有待处理任务（passes: false），失败
 
 ## 循环控制
 
+### 过滤参数
+
+plan-next 支持通过调用方传入过滤条件，只执行符合条件的任务：
+
+| 参数 | 说明 | 示例 |
+|------|------|------|
+| `domain` | 只执行指定 domain 的任务 | `domain=backend` |
+| `app` | 只执行指定 app 的任务 | `app=order-service` |
+
+**过滤规则**：
+- 调用方指定了 domain：跳过 domain 不匹配的任务
+- 调用方指定了 app：跳过 app 不匹配的任务
+- 未指定过滤条件：执行所有 `passes: false` 的任务（默认行为）
+- 任务本身没有 domain/app 字段时，视为匹配任何过滤条件（兼容单应用项目）
+
+backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对应的 domain 和 app 参数。
+
 ### 初始化
 
-1. 读取 `.plan/features.json`，统计总任务数、待处理数（`passes: false` 且 `skipped` 不为 `true`）
+1. 读取 `.plan/features.json`，按过滤条件筛选后统计总任务数、待处理数（`passes: false` 且 `skipped` 不为 `true`）
 2. 如果 `.plan/features.json` 不存在：输出"⚠️ 任务未写入，请先运行 /plan-init 初始化项目" → 停止
-3. 输出循环开始信息："🔄 开始循环执行，共 N 个任务，待处理 M 个"
+3. 输出循环开始信息："🔄 开始循环执行，共 N 个任务，待处理 M 个"（如有过滤条件，显示过滤范围）
 
 ### 失败处理
 
@@ -73,10 +90,10 @@ description: 自动循环执行所有待处理任务（passes: false），失败
 
 ## 阶段 1: READ
 
-1. 读取 `.plan/features.json`，找到第一个 `passes: false` 且 `skipped` 不为 `true` 的任务
+1. 读取 `.plan/features.json`，按过滤条件筛选后，找到第一个 `passes: false` 且 `skipped` 不为 `true` 的任务
 2. 如果没有：退出循环，进入汇总报告
-3. 宣布："开始任务 [ID]: [描述]（第 X/N 个）"
-4. **appPath 路由**：如果任务含 `appPath` 字段，记录当前目录，cd 到 appPath 指向的项目目录执行后续阶段。任务含 `app` 字段时在日志中标注应用名。
+3. 宣布："开始任务 [ID]: [描述]（第 X/N 个）"（如有 app 字段，显示应用名）
+4. **appPath 路由**：如果任务含 `appPath` 字段，记录当前目录，cd 到 appPath 指向的项目目录执行后续阶段。
 
 ## 阶段 2: EXPLORE（条件执行）
 
