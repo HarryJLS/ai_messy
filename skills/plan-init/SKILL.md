@@ -338,7 +338,7 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
     "dataFlow": "数据从哪来 → 经过什么处理 → 到哪去",
     "keyInterfaces": ["需要实现/调用的关键接口说明"]
   },
-  "apiContracts": [],
+  "apiContracts": [],                      // ⭐ API 契约字段（涉及接口对接时必须生成）
   "acceptance": ["验收标准1：可验证的结果"],
   "boundary": "可选：明确边界（只改什么，不改什么）",
   "test": "unit|integration|e2e|manual: 简述测试方法和关键用例",
@@ -358,9 +358,14 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 - 配合 `appPath` 字段指定应用的项目路径（相对路径或绝对路径）
 - 跨会话执行时，backend-single/frontend-single 支持按 app 过滤，自动路由到对应项目目录执行
 
-**apiContracts 字段**（全栈项目，后端任务专用）：
+**apiContracts 字段**（涉及接口对接时必须生成）：
 
-当项目同时包含 backend 和 frontend 任务时，后端任务中新增或修改的接口需要在任务分解阶段就敲定契约，让前端任务可以基于确定的接口开发。
+⚠️ 当任务涉及接口对接时必须生成 apiContracts：
+- **全栈项目**：后端任务新增/修改接口且前端任务会调用 → 在后端任务中定义 apiContracts
+- **纯前端项目**：前端任务调用后端 API → 在前端任务中记录要对接的接口规格（method、path、request、response）
+- apiContracts 是接口对接的硬依赖——缺失会导致开发时接口格式不明确
+
+当项目涉及接口对接时，需要在任务分解阶段就敲定接口契约，确保开发时有明确的接口规格可依赖。
 
 ```json
 "apiContracts": [
@@ -380,7 +385,7 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 ]
 ```
 
-只需定义前端会用到的接口，已有且不变的接口无需重复。前端任务的 `implementationGuide.keyInterfaces` 应引用对应后端任务 ID 的 apiContracts。
+只需定义会用到的接口，已有且不变的接口无需重复。全栈项目中，前端任务的 `implementationGuide.keyInterfaces` 应引用对应后端任务 ID 的 apiContracts。
 
 深度模式产出的任务自带 `implementationGuide`（来自步骤 4 的代码探索）；标准模式中 `implementationGuide` 为可选，有就填。
 

@@ -1,7 +1,7 @@
 {
   "name": "ai_messy",
   "description": "AI Agent 工作流和开发指南合集 - 包含 TDD 开发流程、代码审查、团队编排等 Claude Code 技能",
-  "version": "20260322.3",
+  "version": "20260322.4",
   "author": {
     "name": "HarryJLS",
     "url": "https://github.com/HarryJLS"

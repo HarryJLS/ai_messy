@@ -58,18 +58,64 @@ description: 读取 /plan-init 生成的计划文件，将任务列表写入 .pl
 ---
 ```
 
-**操作 2：Write 工具 → 创建 `.plan/features.json`（写入完整任务列表）**
+**操作 2：Write 工具 → 创建 `.plan/features.json`（原样写入完整任务列表）**
 
-将从计划文件中提取的任务列表 JSON 写入。格式示例：
+将从计划文件中提取的任务列表 JSON **原样写入**，保留 plan-init 生成的所有字段（domain、app、appPath、dependsOn、implementationGuide、apiContracts、boundary、references、dataSamples 等）。不得删减或简化字段。
+
+格式示例：
 ```json
 [
   {
     "id": "1",
+    "domain": "backend",
+    "app": "order-service",
+    "appPath": "../order-service",
+    "dependsOn": [],
+    "complexity": "medium",
     "category": "core",
-    "description": "任务描述",
-    "steps": ["步骤1", "步骤2"],
-    "acceptance": ["验收标准1"],
-    "test": "unit: 测试方法",
+    "description": "实现用户列表查询接口",
+    "steps": ["创建 Controller", "实现 Service 层逻辑", "添加分页支持"],
+    "implementationGuide": {
+      "targetFiles": ["src/controller/UserController.java"],
+      "approach": "基于现有 BaseController 扩展",
+      "referenceCode": ["src/controller/OrderController.java:list()"],
+      "dataFlow": "请求参数 → Service 查询 → 分页封装 → 返回",
+      "keyInterfaces": ["UserService.listUsers(PageRequest)"]
+    },
+    "apiContracts": [
+      {
+        "method": "GET",
+        "path": "/api/users",
+        "description": "获取用户列表",
+        "request": { "query": { "page": "number", "size": "number" } },
+        "response": { "code": 200, "body": { "list": "User[]", "total": "number" } }
+      }
+    ],
+    "acceptance": ["GET /api/users 返回分页用户列表", "支持 page 和 size 参数"],
+    "boundary": "只新增查询接口，不修改现有用户模块",
+    "test": "unit: UserController 单元测试 + integration: API 集成测试",
+    "references": ["OrderController.list() 的实现模式"],
+    "passes": false
+  },
+  {
+    "id": "2",
+    "domain": "frontend",
+    "dependsOn": ["1"],
+    "complexity": "medium",
+    "category": "ui",
+    "description": "实现用户列表页面，对接后端用户查询接口",
+    "steps": ["创建用户列表组件", "对接 GET /api/users 接口", "实现分页交互"],
+    "apiContracts": [
+      {
+        "method": "GET",
+        "path": "/api/users",
+        "description": "获取用户列表（来自任务 1）",
+        "request": { "query": { "page": "number", "size": "number" } },
+        "response": { "code": 200, "body": { "list": "User[]", "total": "number" } }
+      }
+    ],
+    "acceptance": ["用户列表页正确展示数据", "分页功能正常"],
+    "test": "unit: 组件渲染测试 + e2e: 列表页交互测试",
     "passes": false
   }
 ]
