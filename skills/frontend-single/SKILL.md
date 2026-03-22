@@ -62,7 +62,8 @@ description: 精简版前端开发编排，顺序执行四个核心 skill（plan
 | 文件状态 | 跳入阶段 |
 |----------|----------|
 | 无 `.plan/features.json` | 阶段 1（完整流程） |
-| 有 `.plan/features.json`、有目标范围内未完成任务（`passes: false`） | 阶段 2（继续开发） |
+| 有 `.plan/features.json`、有目标范围内未完成任务、`.plan/dev-*.log` 中有开发日志 | 阶段 2（中断恢复） |
+| 有 `.plan/features.json`、有目标范围内未完成任务、无开发日志 | 阶段 1（需先 plan-write） |
 | 有 `.plan/features.json`、目标范围内全部完成、dev log 中无 `[Polisher-Done]` 标记 | 阶段 3（代码优化） |
 | 有 `.plan/features.json`、目标范围内全部完成、dev log 中有 `[Polisher-Done]` 标记 | 直接输出报告 |
 
@@ -76,8 +77,6 @@ description: 精简版前端开发编排，顺序执行四个核心 skill（plan
 ### 阶段 1: 计划写入
 
 **前置检查**：确认 `~/.claude/plans/*.md` 存在（由 `/plan-init` 生成）。若不存在，提示用户先运行 `/plan-init`，然后停止。
-
-跳过条件：已存在 `.plan/features.json` 时跳过，直接进入阶段 2。
 
 1. 调用 `Skill("plan-write")` 将计划写入项目文件
 2. 确认 `.plan/features.json` 和 `.plan/dev-*.log` 存在 → 进入阶段 2
