@@ -70,8 +70,8 @@ description: 精简版后端开发编排，顺序执行四个核心 skill（plan
 plan-next 会自动按过滤条件循环执行所有匹配的任务，包括 appPath 路由。
 
 **执行步骤：**
-1. 调用 `Skill("plan-next")`，传入 domain=backend（+ 可选 app 参数）
-2. plan-next 内部按 TDD 流程循环完成所有匹配任务（READ → EXPLORE → PLAN → RED → IMPLEMENT → GREEN → COMMIT）
+1. 调用 `Skill("plan-next", args: "domain=backend")`（如有 app 参数则追加，如 `"domain=backend app=order-service"`）
+2. plan-next 内部按 TDD 流程循环完成所有匹配任务
 3. plan-next 循环结束后 → 进入阶段 3
 
 **卡住策略：**
