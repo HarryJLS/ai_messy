@@ -324,6 +324,8 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 {
   "id": "1",
   "domain": "backend|frontend",
+  "app": "order-service",
+  "appPath": "../order-service",
   "dependsOn": [],
   "complexity": "small|medium|large|trivial",
   "category": "core|ui|feature|optimization|bugfix|refactor|middleware",
@@ -349,6 +351,12 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 **domain 字段**：
 - 纯后端/纯前端项目可省略（默认根据项目类型推断）
 - 全栈项目必须标注每个任务的 domain
+
+**app 字段**：
+- 单应用项目可省略
+- 多应用/微服务项目必须标注每个任务所属的应用名（如 `order-service`、`user-service`、`admin-web`）
+- 配合 `appPath` 字段指定应用的项目路径（相对路径或绝对路径）
+- 跨会话执行时，backend-single/frontend-single 支持按 app 过滤，自动路由到对应项目目录执行
 
 **apiContracts 字段**（全栈项目，后端任务专用）：
 

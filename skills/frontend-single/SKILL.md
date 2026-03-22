@@ -66,7 +66,10 @@ description: 精简版前端开发编排，顺序执行四个核心 skill（plan
 | 有 `.plan/features.json`、目标范围内全部完成、dev log 中无 `[Polisher-Done]` 标记 | 阶段 3（代码优化） |
 | 有 `.plan/features.json`、目标范围内全部完成、dev log 中有 `[Polisher-Done]` 标记 | 直接输出报告 |
 
-**目标范围**：如果任务含 `domain` 字段，只看 `domain=frontend` 的任务；否则看所有任务。
+**目标范围**：
+- 如果任务含 `domain` 字段，只看 `domain=frontend` 的任务；否则看所有任务
+- 如果用户指定了 app 名（如 `/frontend-single admin-web`），进一步只看 `app=admin-web` 的任务
+- 未指定 app 时，执行所有符合 domain 条件的任务
 
 ---
 
@@ -85,9 +88,12 @@ description: 精简版前端开发编排，顺序执行四个核心 skill（plan
 
 循环执行 `Skill("plan-next")`，直到目标范围内所有任务的 `passes` 都为 `true`。
 
-**domain 过滤**：读取 `.plan/features.json`，检查任务是否包含 `domain` 字段：
+**domain + app 过滤**：读取 `.plan/features.json`，按目标范围过滤任务：
 - 如果任务有 `domain` 字段：只执行 `domain=frontend` 的任务，跳过 `domain=backend` 的任务
+- 如果用户指定了 app：进一步只执行 `app` 匹配的任务
 - 如果任务没有 `domain` 字段：执行所有任务（纯前端项目兼容模式）
+
+**appPath 路由**：如果任务含 `appPath` 字段，执行该任务前先 cd 到 appPath 指向的目录，任务完成后切回原目录。未指定 app 时，按任务中的 appPath 自动路由到各自的项目目录。
 
 **API 契约引用**：当前端任务依赖的后端任务（通过 `dependsOn`）包含 `apiContracts` 字段时，将这些接口契约作为上下文传给 plan-next，前端开发时直接按契约调用后端 API。
 

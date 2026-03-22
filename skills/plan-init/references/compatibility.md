@@ -25,6 +25,16 @@ plan-write 和 plan-next 会原样保留所有 category 值。
 - plan-write 会原样保留此字段到 .plan/features.json
 - plan-next 和 fullstack-team/fullstack-single 根据 domain 分轮执行（先 backend 再 frontend）
 
+## app 字段
+
+标识任务所属的应用/服务名（如 `order-service`、`user-service`、`admin-web`）。
+
+- 单应用项目可省略
+- 多应用/微服务项目必须标注
+- 配合 `appPath` 字段指定项目路径（相对路径或绝对路径）
+- plan-write 会原样保留此字段到 .plan/features.json
+- backend-single/frontend-single 支持按 app 过滤执行，自动 cd 到 appPath 目录
+
 ## implementationGuide 字段说明
 
 `implementationGuide` 是深度模式的增强字段，为执行者提供精确的实现指引。

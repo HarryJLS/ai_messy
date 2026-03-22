@@ -59,6 +59,8 @@
   {
     "id": "1",
     "domain": "backend",
+    "app": "order-service",
+    "appPath": "../order-service",
     "dependsOn": [],
     "complexity": "small|medium|large|trivial",
     "category": "core|ui|feature|optimization|bugfix|refactor|middleware",
