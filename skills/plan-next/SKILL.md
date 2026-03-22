@@ -76,6 +76,7 @@ description: 自动循环执行所有待处理任务（passes: false），失败
 1. 读取 `.plan/features.json`，找到第一个 `passes: false` 且 `skipped` 不为 `true` 的任务
 2. 如果没有：退出循环，进入汇总报告
 3. 宣布："开始任务 [ID]: [描述]（第 X/N 个）"
+4. **appPath 路由**：如果任务含 `appPath` 字段，记录当前目录，cd 到 appPath 指向的项目目录执行后续阶段。任务含 `app` 字段时在日志中标注应用名。
 
 ## 阶段 2: EXPLORE（条件执行）
 
@@ -99,6 +100,10 @@ description: 自动循环执行所有待处理任务（passes: false），失败
    - `dataFlow`：理解数据流向
    - `keyInterfaces`：确认需要实现/调用的接口
 3. **参考资源查找**（如果有 `references` 或 `dataSamples`）：
+
+### 3.0: API 契约确认
+
+当任务有 `apiContracts` 字段时（通常是后端 API 任务），实现时必须严格按照契约定义的 method、path、request、response 结构。当任务通过 `dependsOn` 依赖了含 `apiContracts` 的后端任务时（通常是前端任务），开发时直接按契约调用后端接口。
 
 ### 3.1: 参考方法学习流程
 
@@ -216,7 +221,8 @@ description: 自动循环执行所有待处理任务（passes: false），失败
 1. 设置 `passes: true` 在 .plan/features.json
 2. 写最终日志
 3. 输出进度："✅ 任务 [ID] 完成（已完成 X/N）"
-4. **返回阶段 1**，继续下一个待处理任务
+4. **appPath 还原**：如果阶段 1 切换了目录，cd 回原目录
+5. **返回阶段 1**，继续下一个待处理任务
 
 ---
 
