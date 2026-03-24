@@ -82,17 +82,21 @@ plan-next 会自动按过滤条件循环执行所有匹配的任务，包括 app
 
 ### 阶段 3: 代码优化
 
+**多应用感知**：如果当前执行的 app 任务已全部完成（通过 `{appPath}/.plan/features.json` 判断），直接对该 app 执行代码优化，无需等待其他 app。
+
 **3a. 代码简化（code-simplifier）**
 
-1. 调用 `Skill("code-simplifier")`
-2. 先用 `git diff` 确定本次开发修改的文件范围，将文件列表作为优化目标
+1. 多应用模式：cd 到当前 app 的 appPath 目录
+2. 调用 `Skill("code-simplifier")`
+3. 先用 `git diff` 确定本次开发修改的文件范围，将文件列表作为优化目标
 
 **3b. 代码规范修复（code-fixer）**
 
 1. 调用 `Skill("code-fixer")`
 2. 对代码进行规范修复（基于 git diff）
-3. 完成后在 dev log 中写入 `[Polisher-Done]` 标记
-4. 进入阶段 4
+3. 完成后在 dev log 中写入 `[Polisher-Done]` 标记（多应用模式写入 `{appPath}/.plan/dev-YYYY-MM-DD.log`）
+4. 多应用模式：cd 回编排目录
+5. 进入阶段 4
 
 ---
 
