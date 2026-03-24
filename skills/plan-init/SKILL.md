@@ -326,7 +326,7 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
   "domain": "backend|frontend",
   "app": "order-service",
   "appPath": "../order-service",
-  "dependsOn": [],
+  "dependsOn": [],                      // 同应用引用：纯 ID，如 ["1", "2"]；跨应用引用：app:id 格式，如 ["order-api:3"]
   "complexity": "small|medium|large|trivial",
   "category": "core|ui|feature|optimization|bugfix|refactor|middleware",
   "description": "清晰的任务描述（做什么 + 为什么）",
@@ -357,6 +357,13 @@ skill 触发后，**立即调用 `EnterPlanMode` 工具**进入计划模式。
 - 多应用/微服务项目必须标注每个任务所属的应用名（如 `order-service`、`user-service`、`admin-web`）
 - 配合 `appPath` 字段指定应用的项目路径（相对路径或绝对路径）
 - 跨会话执行时，backend-single/frontend-single 支持按 app 过滤，自动路由到对应项目目录执行
+
+**dependsOn 字段**：
+- 同应用内依赖：使用纯任务 ID，如 `["1", "2"]`
+- 跨应用依赖：使用 `app:id` 格式，如 `["order-api:3"]`，其中 `app` 必须与被引用任务的 `app` 字段一致
+- 混合使用：`["1", "order-api:3"]`
+- 跨应用依赖场景举例：二方包应用声明接口（任务 A），实现应用依赖该声明（任务 B 的 dependsOn 引用 A）
+- plan-next 执行时会检查 dependsOn 的任务是否已完成，未完成则阻塞并提醒用户先执行依赖任务
 
 **apiContracts 字段**（涉及接口对接时必须生成）：
 

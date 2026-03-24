@@ -30,6 +30,17 @@ description: 读取 /plan-init 生成的计划文件，将任务列表写入 .pl
 
 使用 Bash 工具执行 `mkdir -p .plan`，确保目录存在。
 
+**操作 0.5：多应用检测**
+
+扫描任务列表中所有任务的 `appPath` 字段：
+
+- **单应用模式**：所有任务都没有 `appPath` 字段，或所有任务的 `appPath` 相同 → 走原有逻辑（操作 1-4）
+- **多应用模式**：存在不同的 `appPath` → 走多应用写入流程（操作 M1-M4）
+
+---
+
+#### 单应用模式（原有逻辑，不变）
+
 **操作 1：Write 工具 → 创建 `.plan/dev-YYYY-MM-DD.log`**（YYYY-MM-DD 为当天日期）
 
 ```
@@ -143,7 +154,50 @@ description: 读取 /plan-init 生成的计划文件，将任务列表写入 .pl
 ---
 ```
 
+---
+
+#### 多应用模式
+
+当检测到多个不同 `appPath` 时，按应用分组写入。
+
+**操作 M1：为每个 app 创建目录和 features.json**
+
+对任务列表按 `appPath` 分组，对每个分组执行：
+
+1. `mkdir -p {appPath}/.plan`
+2. Write 工具 → `{appPath}/.plan/features.json`（只包含该 app 的任务，JSON 数组格式，字段原样保留）
+
+**操作 M2：为每个 app 创建 dev log**
+
+对每个 appPath 执行：
+
+Write 工具 → `{appPath}/.plan/dev-YYYY-MM-DD.log`，内容与单应用模式的操作 1 相同（`=== Agent 初始化日志 ===` 模板），但 Files 行改为 `{appPath}/.plan/features.json | {appPath}/.plan/dev-YYYY-MM-DD.log`。
+
+**操作 M3：创建 app-registry.json 索引**
+
+Write 工具 → `.plan/app-registry.json`（当前编排目录）：
+
+```json
+{
+  "apps": [
+    { "app": "order-api", "appPath": "../order-api" },
+    { "app": "order-service", "appPath": "../order-service" },
+    { "app": "admin-web", "appPath": "../admin-web" }
+  ]
+}
+```
+
+`app` 取自任务的 `app` 字段，`appPath` 取自任务的 `appPath` 字段。每个唯一的 app/appPath 组合一条记录。
+
+**操作 M4：追加日志到各 app 的 dev log**
+
+对每个 app 的 dev log 追加任务分解日志和初始化总结（同单应用模式的操作 3、操作 4，但任务列表只列该 app 的任务）。
+
+---
+
 ### 步骤 4: 输出确认
+
+**单应用模式**：
 
 ```
 ✅ 初始化完成！
@@ -158,6 +212,23 @@ description: 读取 /plan-init 生成的计划文件，将任务列表写入 .pl
 
 下一步:
 • 运行 /plan-next 开始第一个任务
+```
+
+**多应用模式**：
+
+```
+✅ 初始化完成！（多应用模式）
+
+已创建:
+[对每个 app 列出]
+• {appPath}/.plan/features.json - [N] 个任务
+• {appPath}/.plan/dev-YYYY-MM-DD.log - 初始化日志
+[索引文件]
+• .plan/app-registry.json - 应用索引（[M] 个应用）
+
+下一步:
+• 运行 /plan-next app=xxx 执行指定应用的任务
+• 或运行 /plan-next 执行所有应用的任务（按依赖顺序）
 ```
 
 ⛔ **输出后立即停止，不得自动执行任务或调用 /plan-next。**

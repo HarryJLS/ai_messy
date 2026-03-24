@@ -65,7 +65,6 @@
 | `/skill-creator` | 创建新 skill 的向导 |
 | `/frontend-design` | 前端界面设计 |
 | `/markitdown` | 文件转 Markdown |
-| `/notebooklm-skill` | 查询 Google NotebookLM |
 | `/planning-with-files` | 基于文件的任务规划 |
 | `/ui-ux-pro-max` | UI/UX 设计智能 |
 

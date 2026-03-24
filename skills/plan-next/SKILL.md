@@ -34,16 +34,19 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 
 ### 初始化
 
-1. 读取 `.plan/features.json`，按过滤条件筛选后统计总任务数、待处理数（`passes: false` 且 `skipped` 不为 `true`）
-2. 如果 `.plan/features.json` 不存在：输出"⚠️ 任务未写入，请先运行 /plan-init 初始化项目" → 停止
-3. 输出循环开始信息："🔄 开始循环执行，共 N 个任务，待处理 M 个"（如有过滤条件，显示过滤范围）
+1. **多应用模式检测**：检查当前目录 `.plan/app-registry.json` 是否存在
+   - 存在 → **多应用模式**：读取 app-registry.json，遍历所有 app 的 `{appPath}/.plan/features.json`，合并后按过滤条件筛选统计
+   - 不存在 → **单应用模式**：读取当前目录 `.plan/features.json`（原有逻辑）
+2. 按过滤条件筛选后统计总任务数、待处理数（`passes: false` 且 `skipped` 不为 `true`）
+3. 如果 features.json 不存在（单应用模式下 `.plan/features.json` 不存在，或多应用模式下所有 app 的 features.json 均不存在）：输出"⚠️ 任务未写入，请先运行 /plan-init 初始化项目" → 停止
+4. 输出循环开始信息："🔄 开始循环执行，共 N 个任务，待处理 M 个"（如有过滤条件，显示过滤范围；多应用模式下显示涉及的 app 列表）
 
 ### 失败处理
 
 当任务在任意阶段失败（测试无法通过、实现遇到阻塞等）：
 
-1. 在 `.plan/features.json` 中为该任务添加 `"skipped": true` 和 `"skipReason": "失败原因描述"`
-2. 写跳过日志到 `.plan/dev-YYYY-MM-DD.log`
+1. 在对应的 features.json 中为该任务添加 `"skipped": true` 和 `"skipReason": "失败原因描述"`
+2. 写跳过日志到对应 app 的 dev log（`{appPath}/.plan/dev-YYYY-MM-DD.log` 或 `.plan/dev-YYYY-MM-DD.log`）
 3. 输出："⏭️ 任务 [ID] 跳过：[原因]，继续下一个"
 4. **继续下一个任务**，不中断循环
 
@@ -96,10 +99,30 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 
 ## 阶段 1: READ
 
-1. 读取 `.plan/features.json`，按过滤条件筛选后，找到第一个 `passes: false` 且 `skipped` 不为 `true` 的任务
+1. 读取 features.json（单应用模式读当前目录，多应用模式按 app-registry.json 合并所有 app），按过滤条件筛选后，找到第一个 `passes: false` 且 `skipped` 不为 `true` 的任务
 2. 如果没有：退出循环，进入汇总报告
-3. 宣布："开始任务 [ID]: [描述]（第 X/N 个）"（如有 app 字段，显示应用名）
-4. **appPath 路由**：如果任务含 `appPath` 字段，记录当前目录，cd 到 appPath 指向的项目目录执行后续阶段。
+3. **依赖阻塞检查**：
+   a. 读取该任务的 `dependsOn` 数组，为空则通过
+   b. 对每个依赖项解析：
+      - 纯 ID（如 `"1"`）→ 在当前任务所在的 features.json 中查找
+      - `app:id` 格式（如 `"order-api:3"`）→ 从 `.plan/app-registry.json` 获取该 app 的 appPath，读取 `{appPath}/.plan/features.json`，查找对应 ID 的任务
+   c. 检查所有依赖任务的 `passes` 字段：
+      - 全部 `passes: true` → 通过，继续执行
+      - 有未完成的 → 输出阻塞提醒并跳过该任务：
+        ```
+        ⛔ 任务 [ID] 被阻塞，依赖的任务未完成：
+        - [dep-ref]: [描述] (未完成，位于 {appPath}/.plan/features.json)
+        请先执行: /plan-next app=xxx
+        ```
+      - 继续查找下一个未阻塞的 `passes: false` 任务
+   d. 如果所有 `passes: false` 的任务都被依赖阻塞 → 输出：
+      ```
+      ⚠️ 所有待处理任务均被依赖阻塞，请先完成以下应用的任务：
+      - app=xxx: N 个任务未完成
+      ```
+      → 退出循环
+4. 宣布："开始任务 [ID]: [描述]（第 X/N 个）"（如有 app 字段，显示应用名）
+5. **appPath 路由**：如果任务含 `appPath` 字段，记录当前目录，cd 到 appPath 指向的项目目录执行后续阶段。**多应用模式下，后续阶段读写 features.json 和 dev log 均路由到 `{appPath}/.plan/` 目录**。
 
 ## 阶段 2: EXPLORE（条件执行）
 
@@ -214,6 +237,16 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 
 只在必要时用 try-catch（外部 I/O、解析外部输入、第三方库抛异常），详见 [references/code-style.md](references/code-style.md)。日志必须包含业务标识、操作描述、关键参数、异常堆栈。
 
+### 5.4: 变量命名规范
+
+写代码时，**必须遵循** [references/code-style.md](references/code-style.md) 中的变量命名规范：
+
+- List 类型变量后缀 `List`（如 `userList`、`orderItemList`）
+- Map 类型变量后缀 `Map`（如 `orderMap`、`userRoleMap`）
+- Set 类型变量后缀 `Set`（如 `activeUserSet`、`tagSet`）
+- Boolean 变量以 `is`/`has`/`can`/`should` 开头
+- 计数变量以 `count`/`total` 结尾
+
 ### 5.4: 用户交互
 
 询问时提供具体建议方案（选项 + 优缺点 + ⭐推荐），不抛开放性问题。
@@ -241,8 +274,8 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 
 ## 阶段 8: COMMIT
 
-1. 设置 `passes: true` 在 .plan/features.json
-2. 写最终日志
+1. 设置 `passes: true` 在对应的 features.json 中（单应用模式写 `.plan/features.json`，多应用模式写 `{appPath}/.plan/features.json`）
+2. 写最终日志（写入对应 app 的 dev log）
 3. 输出进度："✅ 任务 [ID] 完成（已完成 X/N）"
 4. **appPath 还原**：如果阶段 1 切换了目录，cd 回原目录
 5. **返回阶段 1**，继续下一个待处理任务

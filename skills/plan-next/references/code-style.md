@@ -306,3 +306,51 @@ if err != nil {
 - catch 之后我要做什么有意义的事？
 - 日志是否包含关键业务标识？
 - 日志最后是否传入了异常对象以打印完整堆栈？
+
+---
+
+## 变量命名规范
+
+### 集合类型命名
+
+| 类型 | 后缀 | 示例 |
+|------|------|------|
+| List / ArrayList / LinkedList | `List` | `userList`, `orderItemList` |
+| Map / HashMap / TreeMap | `Map` | `orderMap`, `userRoleMap` |
+| Set / HashSet / TreeSet | `Set` | `activeUserSet`, `tagSet` |
+
+### Java 示例
+
+```java
+// ✅ 正确
+List<User> userList = userService.listByDeptId(deptId);
+Map<Long, Order> orderMap = orderList.stream()
+    .collect(Collectors.toMap(Order::getId, Function.identity()));
+Set<String> permissionSet = roleService.getPermissions(roleId);
+
+// ❌ 错误
+List<User> users = userService.listByDeptId(deptId);
+Map<Long, Order> orders = orderList.stream()
+    .collect(Collectors.toMap(Order::getId, Function.identity()));
+Set<String> permissions = roleService.getPermissions(roleId);
+```
+
+### Go 示例
+
+```go
+// ✅ 正确
+userList, err := userService.ListByDeptID(ctx, deptID)
+orderMap := make(map[int64]*Order)
+tagSet := make(map[string]struct{})
+
+// ❌ 错误
+users, err := userService.ListByDeptID(ctx, deptID)
+orders := make(map[int64]*Order)
+tags := make(map[string]struct{})
+```
+
+### 其他命名规则
+
+- **Boolean 变量**：以 `is`/`has`/`can`/`should` 开头，如 `isActive`, `hasPermission`, `canEdit`
+- **计数变量**：以 `count`/`total` 结尾，如 `userCount`, `orderTotal`
+- **循环临时变量**：循环/lambda 中允许简写，如 `e`, `it`, `v`, `k`
