@@ -736,3 +736,77 @@ setCount(prev => prev + 1);
 **搜索模式**: `grep -rE "useEffect.*fetch\(" --include="*.tsx" | grep -v "AbortController\|signal\|abort"`
 **通过标准**: 组件卸载时必须取消未完成的 fetch 请求
 **严重级别**: Medium
+
+---
+
+## 自动修复项 (Fix 模式 AUTO)
+
+以下规则在 fix 模式下自动修复，review 模式下仅报告。
+
+### 1. 列表 key 属性
+
+**检测**: `{items.map((item) => <Item />)}` 缺少 key
+**修复**: 添加 `key={item.id}`
+
+### 2. index 作为 key
+
+**检测**: `key={index}`
+**修复**: 改用唯一 id `key={item.id}`
+
+### 3. 事件处理器类型
+
+**检测**: `const handleClick = (e) => { ... }` 缺少类型
+**修复**: 添加 `e: React.MouseEvent<HTMLButtonElement>` 等
+
+### 4. 空依赖数组修复
+
+**检测**: useEffect 引用外部变量但依赖数组为空
+**修复**: 添加缺失的依赖
+
+### 5. any 类型注释
+
+**检测**: `: any` 无注释
+**修复**: 添加 `// TODO: Replace any with proper type`
+
+---
+
+## 需确认修复项 (Fix 模式 CONFIRM)
+
+以下改动在 fix 模式下需用户确认后执行，review 模式下作为建议输出。
+
+### 1. 组件拆分
+
+**条件**: 组件超过 300 行
+**确认内容**: 提供拆分方案
+
+### 2. 状态提升
+
+**检测**: props drilling 超过 2 层
+**建议**: 使用 Context 或状态管理
+
+### 3. useMemo/useCallback
+
+**检测**: 大型计算或频繁创建的回调未优化
+**建议**: 添加 useMemo 或 useCallback
+
+### 4. useEffect 竞态条件修复
+
+**检测**: async useEffect 无 cleanup
+**建议**: 添加 cancelled flag 或 AbortController
+
+### 5. 闭包陈旧状态修复
+
+**检测**: setTimeout/setInterval 中直接使用 state 值
+**建议**: 改用函数式更新 `setState(prev => ...)` 或 useRef
+
+---
+
+## SKIP 项 (禁止修改)
+
+### 变量/组件命名
+即使不符合规范也不修改：组件名、props 名、状态变量名、回调函数名
+
+**仅在报告中提示**:
+```
+[SKIP] Button.tsx:10 组件 `btn` 建议改为 `Button`（已跳过，不修改命名）
+```

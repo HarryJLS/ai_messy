@@ -1,12 +1,24 @@
 ---
 name: code-review
-description: Comprehensive code review for diffs. Analyzes changed code for security vulnerabilities, anti-patterns, and quality issues. Auto-detects domain (Java/Go/Frontend/Backend) from file extensions. Supports 阿里巴巴 Java 开发规范 and 字节跳动 Go 开发规范.
+description: Comprehensive code review for diffs. Analyzes changed code for security vulnerabilities, anti-patterns, and quality issues. Auto-detects domain (Java/Go/Frontend/Backend) from file extensions. Supports 阿里巴巴 Java 开发规范 and 字节跳动 Go 开发规范. 也可作为 code-fixer 自动修复代码规范问题。触发：用户说 "/code-review"、"审查代码"、"代码审查" 进入 review 模式；用户说 "/code-fixer"、"修复代码"、"fix code"、"自动修复"、"规范化代码" 进入 fix 模式。
 allowed-tools: Bash, Read, Edit, Write, Grep, Glob, Task
 ---
 
 # Code Review Skill
 
 You are performing a comprehensive code review on a diff. Your task is to analyze the changed code for security vulnerabilities, anti-patterns, and quality issues.
+
+## 运行模式
+
+本 skill 支持两种模式，根据触发方式自动判断：
+
+| 触发 | 模式 | 行为 |
+|------|------|------|
+| `/code-review`、"审查代码"、"代码审查" | **review** | 只读分析 → 输出 markdown 报告 |
+| `/code-fixer`、"修复代码"、"fix code"、"自动修复"、"规范化代码" | **fix** | 检测问题 + 自动修复代码 |
+
+**review 模式**: 执行全部检查，输出报告文件，不修改任何代码。
+**fix 模式**: 执行全部检查，按 AUTO/CONFIRM/SKIP 三档执行修复（详见下方 Fix 模式章节）。
 
 ## Input Model
 
@@ -310,7 +322,55 @@ These checks apply to ALL changed code regardless of domain.
 
 ---
 
-## Category: 控制流 (Control Flow)
+## Category: 方法复杂度
+
+### 大方法检测
+
+**检查 diff 中**:
+- Go 函数 > 50 行
+- Java 方法 > 70 行
+- Python 函数 > 50 行
+- TypeScript/JavaScript 函数/组件 > 50 行（React 组件 > 300 行）
+
+**通过标准**: 变更的方法/函数行数不超过阈值
+**严重级别**: Medium
+
+**review 模式**: 列出超限方法、当前行数、建议拆分点
+**fix 模式**: 走 CONFIRM 流程，提供拆分方案等待确认
+
+---
+
+### 原子方法拆分
+
+大方法不仅仅是行数问题，更重要的是单一职责。即使方法未超限，如果承担多个独立职责也应建议拆分。
+
+**检查 diff 中**:
+- 方法内包含多个独立逻辑段落（空行/注释分隔的代码块各自完成不同任务）
+- 方法承担多个职责（如：参数校验 + 业务逻辑 + 持久化 + 结果转换混在一起）
+- 方法内有可被其他方法复用的代码片段
+
+**通过标准**: 每个方法只做一件事（单一职责原则）
+**严重级别**: Medium
+**建议**: 按职责拆分为私有方法，原方法作为编排入口依次调用。命名采用动词+名词描述该段落的单一职责。
+
+```java
+// 拆分前：一个方法做三件事
+public OrderResult createOrder(OrderRequest request) {
+    // 校验（20行）...
+    // 创建订单（30行）...
+    // 发送通知（15行）...
+}
+
+// 拆分后：编排入口 + 原子方法
+public OrderResult createOrder(OrderRequest request) {
+    validateOrder(request);
+    Order order = buildAndSaveOrder(request);
+    notifyOrderCreated(order);
+    return toResult(order);
+}
+```
+
+--- (Control Flow)
 
 ### if 嵌套禁止超过 3 层
 
@@ -411,3 +471,71 @@ Based on detected domains, read and apply the appropriate checklists:
 6. **Provide solutions**: Each finding should include a recommendation for how to fix it.
 
 7. **Update incrementally**: Update the review document after each category, not at the end.
+
+---
+
+## Fix 模式（/code-fixer 触发）
+
+当以 fix 模式运行时，在完成上述所有检查后，根据检查结果执行修复。
+
+### 核心原则
+
+1. **保持功能不变** — 绝不改变代码行为，只改变"怎么做"
+2. **禁止修改命名** — 严禁修改用户定义的变量名、函数名、类名、参数名（最高优先级）
+
+### 修复分类
+
+| 类型 | 动作 | 示例 |
+|------|------|------|
+| **AUTO** | 直接用 Edit 工具修复 | 格式问题、缺失注解、冗余 else、预分配 |
+| **CONFIRM** | 汇总后用 AskUserQuestion 询问 | 方法拆分、架构调整、新增构造函数 |
+| **SKIP** | 仅在报告中提示 | 变量命名不规范 |
+
+### 通用自动修复项
+
+| 问题 | 修复 |
+|------|------|
+| 单行超长 (>120字符) | 在运算符/逗号后换行 |
+| 冗余 else | 删除，使用 early return |
+| 空 catch/except 块 | 添加日志记录 |
+
+语言专属的 AUTO/CONFIRM/SKIP 规则详见对应领域参考文件（java.md / go.md / frontend.md / backend.md）末尾的修复项章节。
+
+### 确认交互
+
+存在 CONFIRM 项时，汇总展示：
+
+```
+检测到需确认的改动：
+
+1. [file.go:45] processData (68行) 建议拆分为原子方法
+2. [service.go:12] 建议添加 NewUserService 构造函数
+
+请选择要执行的改动：
+□ 1. 拆分 processData
+□ 2. 添加构造函数
+□ 全部执行
+□ 全部跳过
+```
+
+### 输出报告
+
+```markdown
+## 修复完成
+
+### 自动修复 (已完成)
+- [file:line] 描述
+
+### 用户确认 (已执行/已跳过)
+- [file:line] 描述 - 状态
+
+### 跳过 (禁止修改)
+- [file:line] 原因
+```
+
+### 注意事项
+
+1. **变量名绝对不改** — 只在报告中提示
+2. **保持功能不变** — 只改形式不改逻辑
+3. **增量修改** — 每次修改后验证
+4. **建议先 commit** — 便于回滚

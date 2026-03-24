@@ -858,3 +858,113 @@ go test -cover ./...
 **严重级别**: Medium
 
 ---
+
+## 自动修复项 (Fix 模式 AUTO)
+
+以下规则在 fix 模式下自动修复，review 模式下仅报告。
+
+### 1. gofmt 格式化
+
+**检测**: 代码未通过 gofmt
+**修复**: 运行 `gofmt -w <file>`
+
+### 2. 冗余 else 删除
+
+**检测**: if 块已 return，else 块多余
+**修复**: 删除 else，将代码提升到外层
+
+### 3. 错误包装
+
+**检测**: `return err` 或 `return nil, err`
+**修复**: `return fmt.Errorf("描述操作失败: %w", err)`
+
+### 4. defer Close
+
+**检测**: `os.Open`/`os.Create`/`http.Get` 等返回需关闭资源后无 defer Close
+**修复**: 添加 `defer f.Close()`
+
+### 5. defer Unlock
+
+**检测**: `mu.Lock()` 后手动 `mu.Unlock()`
+**修复**: 改用 `defer mu.Unlock()`
+
+### 6. slice 预分配
+
+**检测**: `var result []T` + 循环 append
+**修复**: `result := make([]T, 0, len(items))`
+
+### 7. map 预分配
+
+**检测**: `make(map[K]V)` 后循环填充
+**修复**: `make(map[K]V, len(items))`
+
+### 8. strings.Builder
+
+**检测**: 循环内字符串 `+=` 拼接
+**修复**: 改用 `strings.Builder`
+
+### 9. HTTP Body 关闭
+
+**检测**: `http.Get/Post/Do` 后无 `resp.Body.Close()`
+**修复**: 添加 `defer resp.Body.Close()`
+
+### 10. WaitGroup.Add 位置修正
+
+**检测**: `wg.Add()` 在 goroutine 内部
+**修复**: 移动到 `go func` 之前
+
+### 11. 闭包变量捕获修正
+
+**检测**: for-range + go func 引用循环变量
+**修复**: 添加 `item := item` 或通过函数参数传递
+
+### 12. time.After 循环泄漏修正
+
+**检测**: for-select 中使用 `time.After`
+**修复**: 改用 `time.NewTimer` + Reset
+
+---
+
+## 需确认修复项 (Fix 模式 CONFIRM)
+
+以下改动在 fix 模式下需用户确认后执行，review 模式下作为建议输出。
+
+### 1. 新增构造函数
+
+**检测**: 直接 `&Struct{}` 赋值多字段
+**建议**: 添加 `NewXxx()` 构造函数
+
+### 2. 添加 context 参数
+
+**检测**: 函数涉及 IO/RPC 但第一个参数非 `ctx context.Context`
+**建议**: 添加 `ctx context.Context` 作为第一个参数
+
+### 3. 抽取公共函数
+
+**检测**: 重复代码块（>5 行相似）
+**建议**: 抽取为独立函数
+
+### 4. map → sync.Map 或加 mutex
+
+**检测**: 多 goroutine 读写普通 map
+**建议**: 改用 sync.Map 或添加 sync.RWMutex 保护
+
+### 5. 共享 slice → mutex 保护
+
+**检测**: 多 goroutine append 同一 slice
+**建议**: 添加 mutex 保护或使用 channel 收集结果
+
+---
+
+## SKIP 项 (禁止修改)
+
+### 变量命名
+即使不符合规范也不修改：
+- `userCnt` 不改 `userCount`
+- `Id` 不改 `ID`
+- `Url` 不改 `URL`
+
+**仅在报告中提示**:
+```
+[SKIP] service.go:15 变量 `userCnt` 建议改为 `userCount`（已跳过，不修改变量名）
+```

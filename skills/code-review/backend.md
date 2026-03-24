@@ -671,3 +671,92 @@ grep -rE "\.execute\(.*%.*%" --include="*.py"
 
 **Pass criteria**: All raw SQL uses bind parameters
 **Severity**: Critical
+
+---
+
+## 自动修复项 (Fix 模式 AUTO)
+
+以下规则在 fix 模式下自动修复，review 模式下仅报告。
+
+### 1. HTTP 请求 timeout
+
+**检测**: `requests.get(url)` 无 timeout
+**修复**: 添加 `timeout=30`
+
+### 2. yaml.safe_load
+
+**检测**: `yaml.load(data)`
+**修复**: `yaml.safe_load(data)`
+
+### 3. 空 except 块
+
+**检测**: `except Exception: pass`
+**修复**: 添加 `logger.error("Error occurred", exc_info=e)`
+
+### 4. bare except
+
+**检测**: `except:` 无异常类型
+**修复**: `except Exception as e:`
+
+### 5. f-string 日志
+
+**检测**: `logger.info(f"User {user_id} logged in")`
+**修复**: `logger.info("User %s logged in", user_id)`
+
+### 6. 类型注解补充
+
+**检测**: 函数参数无类型注解
+**修复**: 根据使用推断添加类型
+
+### 7. asyncio.gather 异常处理
+
+**检测**: `asyncio.gather(...)` 无 `return_exceptions=True`
+**修复**: 添加 `return_exceptions=True`
+
+### 8. async session 上下文管理
+
+**检测**: `session = async_session()` 未用 `async with`
+**修复**: 改用 `async with async_session() as session:`
+
+---
+
+## 需确认修复项 (Fix 模式 CONFIRM)
+
+以下改动在 fix 模式下需用户确认后执行，review 模式下作为建议输出。
+
+### 1. 依赖注入
+
+**检测**: 路由中直接实例化服务
+**建议**: 使用 `Depends()`
+
+### 2. Pydantic 模型
+
+**检测**: dict 类型的请求体
+**建议**: 创建 Pydantic 模型
+
+### 3. async 改造
+
+**检测**: sync 路由中使用阻塞 IO
+**建议**: 改为 async + await
+
+### 4. 抽取公共函数
+
+**检测**: 重复代码块
+**建议**: 抽取为独立函数
+
+### 5. 全局可变状态重构
+
+**检测**: 模块级 dict/list 被请求处理函数修改
+**建议**: 改用依赖注入 + asyncio.Lock 或 contextvars
+
+---
+
+## SKIP 项 (禁止修改)
+
+### 变量命名
+即使不符合 PEP8 也不修改：函数名、变量名、参数名、类名
+
+**仅在报告中提示**:
+```
+[SKIP] service.py:15 变量 `userName` 建议改为 `user_name`（已跳过，不修改变量名）
+```
