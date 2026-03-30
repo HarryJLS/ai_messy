@@ -20,20 +20,20 @@
 |------|------|
 | `/plan-init` | 需求分析和任务分解（三档自适应：模糊需求→深度模式，明确文档→标准模式，已有JSON→极速模式），生成计划文件供审批 |
 | `/plan-write` | 读取审批后的计划文件，写入 `.plan/features.json` 和 `.plan/dev-YYYY-MM-DD.log` |
-| `/plan-next` | 执行下一个待处理任务，使用 TDD 循环（RED → GREEN → COMMIT） |
+| `/plan-next` | 执行下一个待处理任务，使用 TDD 循环（RED → GREEN → COMMIT），支持复杂度分层（trivial/small/medium/large 影响流水线深度） |
 | `/backend-team` | 全流程编排：预研 + 初始化 + 开发 + 简化 + 修复 |
 | `/framework-team` | 新项目脚手架编排：架构设计 + 脚手架 + TDD + 验证 + CR |
 | `/frontend-team` | 前端开发编排：设计系统 + UI 方案 + 开发 + UI/UX 打磨 + CR |
 | `/fullstack-team` | 全栈开发编排：后端预研 + 前端设计 → 后端开发 → 前端对接 → 打磨 → CR |
-| `/backend-single` | 精简版后端编排：plan-write → plan-next → simplifier → fixer（需先 /plan-init） |
-| `/frontend-single` | 精简版前端编排：plan-write → plan-next → UI/UX 检查 → simplifier → fixer（需先 /plan-init） |
-| `/fullstack-single` | 精简版全栈编排：plan-write → 后端 plan-next → 前端 plan-next → simplifier → fixer（需先 /plan-init） |
+| `/backend-single` | 精简版后端编排：plan-write → plan-next → 快速验证 → simplifier → fixer（需先 /plan-init） |
+| `/frontend-single` | 精简版前端编排：plan-write → plan-next → 快速验证 + UI/UX 检查 → simplifier → fixer（需先 /plan-init） |
+| `/fullstack-single` | 精简版全栈编排：plan-write → 后端 plan-next → 前端 plan-next → 快速验证 → simplifier → fixer（需先 /plan-init） |
 
 ### 代码质量
 
 | 命令 | 用途 |
 |------|------|
-| `/code-review` | 审查代码变更，生成审查报告 |
+| `/code-review` | 审查代码变更，生成审查报告（含 APPROVE/WARNING/BLOCK verdict） |
 | `/code-fixer` | 自动修复代码风格问题（保留变量名不变） |
 | `/code-simplifier` | 简化和优化代码 |
 | `/unit-test` | 生成单元测试 |
@@ -82,14 +82,14 @@
 |------|-------|------|
 | lead | self | 方案预研、Research & Reuse、任务分解、计划写入、全量验证、编排协调、用户沟通、决策 |
 | developer | general-purpose (bypassPermissions) | TDD 任务执行循环 |
-| polisher | general-purpose (bypassPermissions) | 代码简化 + 风格修复 |
+| polisher | general-purpose (bypassPermissions) | 代码简化 + 风格修复（De-Sloppify 已迁移到 plan-next REFACTOR 阶段） |
 | build-fixer | build-error-resolver（项目 agent） | 验证失败时自动修复 build/lint/type 错误 |
 | plan-reviewer | code-architect（项目 agent） | 零上下文方案审查，挑战完整性和合理性 |
 | reviewer | code-reviewer（项目 agent） | 生产级 CR，拥有完整代码上下文 |
 | blind-reviewer | code-reviewer（项目 agent） | 零上下文盲审，仅基于 PR 描述 + diff |
 | security-reviewer | security-reviewer（项目 agent） | 安全审查，聚焦漏洞检测（条件触发） |
 
-**流水线：** Research & Reuse（lead）→ 方案预研 + 任务分解（lead，plan-init 深度模式）→ 方案审查（plan-reviewer）→ 计划写入（lead）→ TDD 开发循环（developer）→ 全量验证 + 自动修复（lead + build-fixer）→ 代码打磨（polisher）→ 多维代码审查（reviewer + blind-reviewer + security-reviewer）→ 报告
+**流水线：** Research & Reuse（lead）→ 方案预研 + 任务分解（lead，plan-init 深度模式）→ 方案审查（plan-reviewer，复杂度分层触发）→ 计划写入（lead）→ TDD 开发循环（developer，Handoff 协议交接）→ 全量验证 + 自动修复（lead + build-fixer，构建工具自动检测）→ 代码打磨（polisher）→ 多维代码审查（reviewer + blind-reviewer + security-reviewer，复杂度分层控制 CR 范围）→ 报告
 
 ### framework-team（新项目脚手架）
 
@@ -155,7 +155,7 @@
 
 **前置条件：** 需先运行 `/plan-init` 完成任务分解并审批。
 
-**流水线：** plan-write → plan-next 循环 → code-simplifier → code-fixer
+**流水线：** plan-write → plan-next 循环 → 快速验证（build + test） → code-simplifier → code-fixer
 
 **跳入点判断：**
 
@@ -172,9 +172,9 @@
 
 **前置条件：** 需先运行 `/plan-init` 完成任务分解并审批。
 
-**流水线：** plan-write → plan-next 循环 → 精简 UI/UX 检查（5 项） → code-simplifier → code-fixer
+**流水线：** plan-write → plan-next 循环 → 快速验证 + 精简 UI/UX 检查（5 项） → code-simplifier → code-fixer
 
-**与 backend-single 的核心差异：** 阶段 0 增加框架检测（React/Vue3/Vue2），阶段 2 增加前端专项开发规则，阶段 3 在 code-simplifier 前插入精简 UI/UX 检查（交互反馈、响应式、主题色、无障碍、过渡动画）。
+**与 backend-single 的核心差异：** 阶段 0 增加框架检测（React/Vue3/Vue2），阶段 2 增加前端专项开发规则，阶段 2.5 在快速验证后执行精简 UI/UX 检查（交互反馈、响应式、主题色、无障碍、过渡动画）。
 
 **跳入点判断：**
 
@@ -191,7 +191,7 @@
 
 **前置条件：** 需先运行 `/plan-init` 完成任务分解并审批。.plan/task.md 中需包含 `domain` 列。
 
-**流水线：** plan-write → 后端 plan-next 循环 → 前端 plan-next 循环 → code-simplifier → code-fixer
+**流水线：** plan-write → 后端 plan-next 循环 → 前端 plan-next 循环 → 快速验证（build + test） → code-simplifier → code-fixer
 
 **跳入点判断：**
 

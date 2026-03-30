@@ -114,11 +114,17 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 
 ### 阶段 1.5: 方案对抗审查（plan-reviewer）
 
-**触发条件**：.plan/task.md 中任务数 ≥ 3 时执行。任务数 < 3 的小改动直接跳过，进入阶段 2。
+**触发条件**（复杂度分层）：
+
+| 任务分布 | 是否执行 |
+|---------|---------|
+| 全部 trivial/small，且任务数 ≤ 3 | 跳过，直接进入阶段 2 |
+| 含 medium，或任务数 4-6 | 执行 |
+| 含 large，或任务数 > 6 | 执行 |
 
 **lead 操作：**
 
-1. 读取 .plan/task.md 内容，统计任务数量
+1. 读取 .plan/task.md 内容，统计任务数量和 complexity 分布
 2. spawn plan-reviewer（`subagent_type: code-architect`（项目 agent）, `team_name: backend-team`），发送指令：
 
 ```
@@ -183,7 +189,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 3. 按 TDD 流程完成（READ → EXPLORE → PLAN → RED → IMPLEMENT → GREEN → COMMIT）
 4. 每完成一个任务，SendMessage 通知 lead 进度（已完成/总数）
 5. 继续下一个 passes: false 的任务
-6. 全部完成后 SendMessage 通知 lead
+6. 全部完成后按 Handoff 格式（详见 references/handoff-template.md）SendMessage 给 lead
 
 注意事项：
 - TDD 流程内的常规门控（EXPLORE→PLAN、PLAN→RED 确认）：自主跳过
@@ -211,17 +217,29 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 
 **lead 操作：**
 
-1. 执行全量验证（根据项目语言选择对应命令）：
+1. **自动检测项目构建工具**，然后执行全量验证：
 
-| 验证项 | Java | Go | JS/TS | Python |
-|--------|------|----|-------|--------|
-| Build | `mvn compile` | `go build ./...` | `npm run build` | - |
-| Lint | checkstyle/spotbugs | `go vet ./...` | `npm run lint` | `ruff check .` |
-| Test | `mvn test` | `go test ./...` | `npm test` | `pytest` |
-| Coverage | `mvn test -Pcoverage` | `go test -cover ./...` | `npm test -- --coverage` | `pytest --cov` |
-| Security | 硬编码扫描 | 硬编码扫描 | `npm audit` | 硬编码扫描 |
-| Diff | `git diff --stat` | `git diff --stat` | `git diff --stat` | `git diff --stat` |
-| API 验证 | 调用 `Skill("backend-test")`（仅当项目含 HTTP 服务时） | 服务可启动、接口无 5xx、响应结构正确 |
+**构建工具检测**：
+| 检测条件 | 语言 | Build 命令 | Lint 命令 | Test 命令 |
+|----------|------|-----------|----------|----------|
+| `pom.xml` | Java | `mvn compile` | checkstyle/spotbugs | `mvn test` |
+| `build.gradle` | Java | `gradle build -x test` | checkstyle/spotbugs | `gradle test` |
+| `go.mod` | Go | `go build ./...` | `go vet ./...` | `go test ./...` |
+| `package.json` | JS/TS | `npm run build` | `npm run lint` | `npm test` |
+| `pyproject.toml` / `requirements.txt` | Python | - | `ruff check .` | `pytest` |
+
+优先使用 `package.json` 中 scripts 定义的命令（如 `build`、`lint`、`test`），比默认命令更准确。
+
+**验证项**（按检测到的工具执行）：
+| 验证项 | 说明 |
+|--------|------|
+| Build | 编译构建 |
+| Lint | 代码静态检查 |
+| Test | 运行测试套件 |
+| Coverage | 测试覆盖率（目标 80%） |
+| Security | 硬编码扫描（`grep -rn` 检查 API key、password、secret 等） |
+| Diff | `git diff --stat`（检查是否有意外修改的文件） |
+| API 验证 | 调用 `Skill("backend-test")`（仅当项目含 HTTP 服务时） |
 
 2. 输出验证报告：
 
@@ -261,15 +279,7 @@ spawn polisher（`subagent_type: general-purpose`, `mode: bypassPermissions`, `t
 ```
 请依次执行代码优化：
 
-第零步：De-Sloppify 检查
-- 检测 AI 过度工程化的模式：
-  - 测试中是否测试了语言特性而非业务逻辑（如测试 null 参数构造函数而非业务规则）
-  - 是否有过度防守的类型检查（内部方法间传递已校验的参数又重复校验）
-  - 是否有不必要的 try-catch（catch 后只是重新抛出）
-  - 是否有过度抽象（只用了一次的 interface/abstract class）
-- 发现后直接清理，SendMessage 给 lead 报告清理项
-
-第一步：调用 Skill("code-simplifier")
+第一步：优先调用 Skill("simplify")，若 simplify skill 不可用则回退调用 Skill("code-simplifier")
 - 先用 git diff 确定本次开发修改的文件范围，将文件列表作为优化目标
 - 完成后 SendMessage 通知 lead
 
@@ -277,7 +287,7 @@ spawn polisher（`subagent_type: general-purpose`, `mode: bypassPermissions`, `t
 - 对代码进行规范修复（基于 git diff）
 - 需确认的改动（CONFIRM 类）：SendMessage 给 lead 说明改动列表，等待回复
 - 完成后在 dev log 中写入 `[Polisher-Done]` 标记
-- SendMessage 通知 lead，报告优化全部完成
+- 按 Handoff 格式（详见 references/handoff-template.md）SendMessage 给 lead，报告优化全部完成
 ```
 
 **lead 验证：**
@@ -295,9 +305,19 @@ spawn polisher（`subagent_type: general-purpose`, `mode: bypassPermissions`, `t
    - 读取 `.plan/pr-description.md`
    - **安全审查触发判断**：检查 diff 中是否包含安全相关关键词（`auth`、`login`、`password`、`token`、`secret`、`key`、`middleware`、`interceptor`、`filter`、`sql`、`query`、`exec`、`.env`、`config`）
 
-2. 并行 spawn reviewer（审查标准详见 `references/reviewer-prompt.md`）：
-   - 默认 spawn 2 个：reviewer + blind-reviewer
-   - 若触发安全审查条件：额外 spawn security-reviewer，共 3 个并行
+2. **CR 范围判断**（复杂度分层）：
+
+   | 任务分布 | CR 范围 |
+   |---------|--------|
+   | 全部 trivial/small，且任务数 ≤ 3 | 仅 reviewer（跳过 blind-reviewer） |
+   | 含 medium，或任务数 4-6 | reviewer + blind-reviewer |
+   | 含 large，或任务数 > 6 | reviewer + blind-reviewer + security-reviewer（无论是否触发安全关键词） |
+
+3. 并行 spawn reviewer（审查标准详见 `references/reviewer-prompt.md`）：
+   - 简化模式：仅 spawn reviewer
+   - 标准模式：spawn reviewer + blind-reviewer
+   - 完整模式：spawn reviewer + blind-reviewer + security-reviewer
+   - 标准/简化模式下若触发安全审查条件：额外 spawn security-reviewer
 
 **reviewer（Production CR）：**
 spawn（`subagent_type: code-reviewer`（项目 agent）, `team_name: backend-team`），发送指令：

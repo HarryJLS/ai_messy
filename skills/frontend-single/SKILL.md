@@ -20,7 +20,9 @@ description: 精简版前端开发编排，顺序执行四个核心 skill（plan
   ↓
 阶段 2: 循环 Skill("plan-next") 直到所有任务完成
   ↓
-阶段 3: 精简 UI/UX 检查 + Skill("code-simplifier") + Skill("code-fixer")
+阶段 2.5: 快速验证（build + test）+ 精简 UI/UX 检查
+  ↓
+阶段 3: Skill("code-simplifier") + Skill("code-fixer")
   ↓
 阶段 4: 执行报告
 ```
@@ -95,7 +97,7 @@ plan-next 会自动按过滤条件循环执行所有匹配的任务，包括 app
 **执行步骤：**
 1. 调用 `Skill("plan-next", args: "domain=frontend")`（如有 app 参数则追加，如 `"domain=frontend app=admin-web"`）
 2. plan-next 内部按 TDD 流程循环完成所有匹配任务
-3. plan-next 循环结束后 → 进入阶段 3
+3. plan-next 循环结束后 → 进入阶段 2.5
 
 **前端专项规则（在 plan-next 执行时遵循）：**
 - 组件实现时按框架约定组织文件（React: 组件文件夹模式，Vue: SFC 单文件组件）
@@ -110,9 +112,26 @@ plan-next 会自动按过滤条件循环执行所有匹配的任务，包括 app
 
 ---
 
-### 阶段 3: 代码优化
+### 阶段 2.5: 快速验证 + UI/UX 检查
 
-**3a. 精简 UI/UX 检查（5 项核心）**
+在代码优化前确认基本可用性和 UI 质量。
+
+**步骤 1: Build + Test 验证**
+
+1. 读取 features.json，统计目标范围内任务状态：
+   - 如有跳过的任务，输出警告："⚠️ X 个任务被跳过，建议检查后再继续"
+2. **Build 验证**：检测项目构建工具并运行构建
+   | 检测条件 | 构建命令 |
+   |----------|---------|
+   | `package.json` 有 build script | `npm run build` |
+   | `vite.config.*` 存在 | `npx vite build` |
+   | `next.config.*` 存在 | `npx next build` |
+3. **Test 验证**：运行项目测试（如有测试脚本）
+4. 输出结果："快速验证: Build [PASS/FAIL] | Test [PASS/FAIL]"
+5. Build 失败 → AskUserQuestion（展示错误日志，询问是否修复后继续或跳过验证）
+6. Test 失败（仅新失败的用例） → AskUserQuestion
+
+**步骤 2: 精简 UI/UX 检查（5 项核心）**
 
 先用 `git diff` 确定本次修改的前端文件范围，逐项检查：
 
@@ -124,13 +143,19 @@ plan-next 会自动按过滤条件循环执行所有匹配的任务，包括 app
 
 发现的问题直接修复。检查完成后输出简要检查报告（通过项 / 修复项）。
 
-**3b. 代码简化（code-simplifier）**
+全部通过 → 进入阶段 3
+
+---
+
+### 阶段 3: 代码优化
+
+**3a. 代码简化（code-simplifier）**
 
 1. 多应用模式：cd 到当前 app 的 appPath 目录
 2. 调用 `Skill("code-simplifier")`
-3. 将 3a 确定的文件范围作为优化目标
+3. 先用 `git diff` 确定本次开发修改的文件范围，将文件列表作为优化目标
 
-**3c. 代码规范修复（code-fixer）**
+**3b. 代码规范修复（code-fixer）**
 
 1. 调用 `Skill("code-fixer")`
 2. 对代码进行规范修复（基于 git diff）

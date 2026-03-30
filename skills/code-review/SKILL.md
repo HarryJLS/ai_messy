@@ -452,6 +452,15 @@ Based on detected domains, read and apply the appropriate checklists:
 
 ### Recommendations
 {Overall recommendations based on the changes reviewed}
+
+### Verdict
+
+**结论**: {APPROVE / WARNING / BLOCK}
+
+判定规则:
+- **BLOCK**: 存在任何 Critical 级别 finding
+- **WARNING**: 存在 High 级别 finding，无 Critical
+- **APPROVE**: 仅有 Medium/Low 级别 finding 或无 finding
 ```
 
 ---
@@ -498,6 +507,8 @@ Based on detected domains, read and apply the appropriate checklists:
 | 单行超长 (>120字符) | 在运算符/逗号后换行 |
 | 冗余 else | 删除，使用 early return |
 | 空 catch/except 块 | 添加日志记录 |
+| if 嵌套超 3 层 | 提取最内层条件为 early return |
+| 条件表达式超 3 个 `&&`/`\|\|` | 提取为命名布尔变量 |
 
 语言专属的 AUTO/CONFIRM/SKIP 规则详见对应领域参考文件（java.md / go.md / frontend.md / backend.md）末尾的修复项章节。
 

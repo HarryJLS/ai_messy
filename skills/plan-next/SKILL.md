@@ -66,6 +66,13 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
   | optimization / bugfix | 标准 TDD（RED → GREEN → REFACTOR） |
   | refactor | 先确保现有测试通过，重构后验证不变 |
   | config / docs / middleware | 简化模式：跳过 RED，直接实现 + 验证 |
+- **复杂度分层**：根据任务 complexity 调整流水线深度（与 category TDD 弹性正交叠加）
+  | complexity | EXPLORE | PLAN | RED/GREEN | REFACTOR |
+  |-----------|---------|------|-----------|----------|
+  | trivial   | 跳过    | 精简（只看 steps） | 按 category TDD 弹性 | 跳过 |
+  | small     | 条件执行（同原有规则） | 标准 | 按 category TDD 弹性 | 精简（只检查 DRY） |
+  | medium    | 标准    | 标准 | 标准 | 标准 |
+  | large     | 标准 + 影响分析 | 标准 + 回滚方案 | 标准 | 标准 + De-Sloppify |
 - **日志用于恢复**：每条日志必须能在新会话中恢复上下文
 - **参考方法必查**：`references` 字段的方法必须在 PLAN 阶段查找并学习
 - **数据样例必验**：`dataSamples` 字段必须在 RED 阶段基于样例编写测试
@@ -75,16 +82,13 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 
 ## 日志格式
 
-追加到 `.plan/dev-YYYY-MM-DD.log`：
+追加到 `.plan/dev-YYYY-MM-DD.log`，每个任务写 2 条日志（进入 + 完成）：
 
 ```
 [时间戳] [阶段] Task N: 一句话概述
 ├─ 状态: exploring|planning|red|green|refactoring|done
-├─ 决策: 关键决策
-├─ 文件: file1.ts, file2.ts
-├─ 待确认问题: N 个
-├─ 用户决策: 问题1→选择A | 问题2→选择B
-├─ 问题: 问题 → 解决方案
+├─ 关键决策/问题: 最重要的一个（无则省略）
+├─ 改动文件: file1.ts, file2.ts（GREEN/COMMIT 阶段才写）
 └─ 下一步: 具体操作
 ---
 ```
@@ -126,17 +130,26 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 
 ## 阶段 2: EXPLORE（条件执行）
 
-**仅当修改现有代码时执行**，完全新建则跳过。
+**跳过条件**：
+- 完全新建的代码（无需探索现有实现）
+- `complexity: trivial` 的任务（改动量极小，不需要探索）
 
 | 场景 | 是否 Explore |
 |------|-------------|
 | 修改现有方法/类 | ✅ |
 | 在现有类中添加新方法 | ✅ |
 | 创建全新的类/模块 | ❌ |
+| complexity: trivial | ❌ |
+
+`complexity: large` 时额外执行**影响分析**：列出所有可能受影响的上下游模块和调用方。
 
 如有待确认问题，必须在进入 PLAN 前向用户确认。
 
 ## 阶段 3: PLAN
+
+**complexity: trivial 精简模式**：只查看任务的 `steps` 字段，跳过 3.0-3.2 的详细分析，直接进入下一阶段。
+
+**标准流程**（small/medium/large）：
 
 1. 查看任务的 `steps`, `acceptance`, `test`, `boundary` 字段
 2. 如果任务包含 `implementationGuide` 字段，优先参考：
@@ -202,6 +215,7 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 
 3. **影响范围确认**：列出要改/不改的文件
 4. **Service 架构预评估**：评估是否需要抽取
+5. **回滚方案**（仅 `complexity: large`）：简要说明如果实现失败，如何安全回退到改动前状态
 
 如有待确认问题，必须在进入 RED 前向用户确认。
 
@@ -262,6 +276,8 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 
 ## 阶段 7: REFACTOR 🔧
 
+**跳过条件**：`complexity: trivial` 的任务跳过整个 REFACTOR 阶段。
+
 在测试保持绿色的前提下优化刚写的代码：
 
 1. 消除重复代码（DRY）
@@ -269,6 +285,18 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 3. 改进命名（变量、方法、类）
 4. 简化条件表达式
 5. 运行测试 → 确认仍然全部通过
+
+**De-Sloppify 检查**（仅 `complexity: medium/large` 时执行）：
+
+识别并清理 AI 生成代码中常见的过度工程化模式：
+- 测试中测试了语言特性而非业务逻辑（如测试 null 参数等语言保证的行为）
+- 过度防守校验（内部方法间传递已校验参数又重复校验）
+- 不必要的 try-catch（catch 后只是重新抛出或仅记录日志）
+- 只有一个实现的 interface/abstract class（一次性抽象）
+
+发现问题直接清理，运行测试确认仍然通过。
+
+**精简模式**（`complexity: small`）：只执行第 1 项（DRY），跳过其余。
 
 ⚠️ REFACTOR 只优化结构，不改变行为。如果测试变红，立即回退。
 
@@ -287,7 +315,7 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 1. ✅ 测试通过（RED → GREEN → REFACTOR）
 2. ✅ `acceptance` 全部满足
 3. ✅ `passes: true` 已设置
-4. ✅ `.plan/dev-YYYY-MM-DD.log` 中包含该任务的 3-4 条日志
+4. ✅ `.plan/dev-YYYY-MM-DD.log` 中包含该任务的 2 条日志（进入 + 完成）
 
 ## 恢复指南
 
@@ -310,7 +338,19 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 
 ## 完成后输出（汇总报告）
 
-循环结束后输出汇总：
+循环结束后：
+
+**1. 写入完成信号到 dev log**（供下游 skill 读取）：
+
+```
+[时间戳] [CYCLE-DONE] 循环执行完成
+├─ 范围: domain=xxx app=xxx
+├─ 完成: X | 跳过: Y | 未处理: Z
+└─ 结论: ALL_DONE | HAS_SKIPPED | HAS_REMAINING
+---
+```
+
+**2. 输出汇总报告**：
 
 ```
 📊 循环执行汇总

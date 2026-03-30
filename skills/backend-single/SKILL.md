@@ -20,6 +20,8 @@ description: 精简版后端开发编排，顺序执行四个核心 skill（plan
   ↓
 阶段 2: 循环 Skill("plan-next") 直到所有任务完成
   ↓
+阶段 2.5: 快速验证（build + test）
+  ↓
 阶段 3: Skill("code-simplifier") + Skill("code-fixer")
   ↓
 阶段 4: 执行报告
@@ -71,12 +73,34 @@ plan-next 会自动按过滤条件循环执行所有匹配的任务，包括 app
 **执行步骤：**
 1. 调用 `Skill("plan-next", args: "domain=backend")`（如有 app 参数则追加，如 `"domain=backend app=order-service"`）
 2. plan-next 内部按 TDD 流程循环完成所有匹配任务
-3. plan-next 循环结束后 → 进入阶段 3
+3. plan-next 循环结束后 → 进入阶段 2.5
 
 **卡住策略：**
 - 同一任务内测试连续失败 3 次：用 AskUserQuestion 向用户展示错误日志和已尝试的方案，请求决策
 - 发现任务 description 与实际代码结构不匹配：用 AskUserQuestion 向用户说明差异
 - 不要在失败后无限重试同一方案，尝试 2 种不同思路后仍失败即向用户求助
+
+---
+
+### 阶段 2.5: 快速验证
+
+在代码优化前确认基本可用性，避免在有问题的代码上做优化。
+
+1. 读取 features.json，统计目标范围内任务状态：
+   - 如有跳过的任务，输出警告："⚠️ X 个任务被跳过，建议检查后再继续"
+2. **Build 验证**：检测项目构建工具并运行构建
+   | 检测条件 | 构建命令 |
+   |----------|---------|
+   | `pom.xml` | `mvn compile -q` |
+   | `build.gradle` | `gradle build -x test -q` |
+   | `package.json` 有 build script | `npm run build` |
+   | `go.mod` | `go build ./...` |
+   | `pyproject.toml` / `setup.py` | `python -m py_compile` 或项目配置的构建命令 |
+3. **Test 验证**：运行项目测试（如有测试脚本）
+4. 输出结果："快速验证: Build [PASS/FAIL] | Test [PASS/FAIL]"
+5. Build 失败 → AskUserQuestion（展示错误日志，询问是否修复后继续或跳过验证）
+6. Test 失败（仅新失败的用例） → AskUserQuestion
+7. 全部通过 → 进入阶段 3
 
 ---
 
