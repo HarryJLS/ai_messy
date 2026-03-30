@@ -53,7 +53,7 @@
 
 ### 第二步：代码简化
 
-1. 优先调用 Skill("simplify")，若 simplify skill 不可用则回退调用 Skill("code-simplifier")
+1. 调用 Skill("code-simplifier")
 2. 将第零步确定的文件范围作为优化目标
 3. 完成后 SendMessage 通知 lead
 

@@ -127,7 +127,7 @@ plan-next 会自动按过滤条件循环执行所有匹配的任务，包括 app
 **3b. 代码简化（code-simplifier）**
 
 1. 多应用模式：cd 到当前 app 的 appPath 目录
-2. 优先调用 `Skill("simplify")`，若 simplify skill 不可用则回退调用 `Skill("code-simplifier")`
+2. 调用 `Skill("code-simplifier")`
 3. 将 3a 确定的文件范围作为优化目标
 
 **3c. 代码规范修复（code-fixer）**

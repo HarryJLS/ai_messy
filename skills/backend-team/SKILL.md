@@ -269,7 +269,7 @@ spawn polisher（`subagent_type: general-purpose`, `mode: bypassPermissions`, `t
   - 是否有过度抽象（只用了一次的 interface/abstract class）
 - 发现后直接清理，SendMessage 给 lead 报告清理项
 
-第一步：优先调用 Skill("simplify")，若 simplify skill 不可用则回退调用 Skill("code-simplifier")
+第一步：调用 Skill("code-simplifier")
 - 先用 git diff 确定本次开发修改的文件范围，将文件列表作为优化目标
 - 完成后 SendMessage 通知 lead
 

@@ -448,7 +448,7 @@ spawn polisher（`subagent_type: general-purpose`, `mode: bypassPermissions`, `t
 - 发现问题直接修复
 - SendMessage 给 lead 报告检查结果和修复项
 
-第二步：优先调用 Skill("simplify")，若 simplify skill 不可用则回退调用 Skill("code-simplifier")
+第二步：调用 Skill("code-simplifier")
 - 先用 git diff 确定本次修改的文件范围（后端+前端），将文件列表作为优化目标
 - 完成后 SendMessage 通知 lead
 
