@@ -162,7 +162,7 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 
 ### 3.0: API 契约确认
 
-当任务有 `apiContracts` 字段时（通常是后端 API 任务），实现时必须严格按照契约定义的 method、path、request、response 结构。当任务通过 `dependsOn` 依赖了含 `apiContracts` 的后端任务时（通常是前端任务），开发时直接按契约调用后端接口。
+当任务有 `apiContracts` 字段时（通常是后端 API 任务），实现时必须严格按照契约定义的 method、path、request、response 结构。当前端任务通过 `implementationGuide.keyInterfaces` 引用了后端任务 ID 的 apiContracts 时，开发时直接按契约调用后端接口（前端任务无需 dependsOn 后端任务，不同 domain 通过 apiContracts 约定接口即可并行开发）。
 
 ### 3.1: 参考方法学习流程
 

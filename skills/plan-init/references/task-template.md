@@ -59,37 +59,111 @@
   {
     "id": "1",
     "domain": "backend",
-    "app": "order-service",
-    "appPath": "../order-service",
+    "app": "share-api",
+    "appPath": "../share-api",
     "dependsOn": [],
-    "complexity": "small|medium|large|trivial",
-    "category": "core|ui|feature|optimization|bugfix|refactor|middleware",
-    "description": "任务描述（做什么 + 为什么 + 业务背景）",
+    "complexity": "small",
+    "category": "core",
+    "description": "在 share 包中定义公共 DTO 和接口（编译级基础依赖，其他服务 import 这些类）",
     "steps": ["步骤1（精确到文件:方法）", "步骤2"],
     "implementationGuide": {
-      "targetFiles": ["src/service/XxxService.java:processData()"],
-      "approach": "实现思路描述，说明核心逻辑怎么写",
-      "referenceCode": ["src/service/YyyService.java:similarMethod() — 可参考的实现模式"],
-      "dataFlow": "数据从哪来 → 经过什么处理 → 到哪去",
-      "keyInterfaces": ["需要实现/调用的关键接口说明"]
+      "targetFiles": ["src/api/UserDTO.java"],
+      "approach": "定义公共数据传输对象",
+      "referenceCode": [],
+      "dataFlow": "",
+      "keyInterfaces": []
+    },
+    "acceptance": ["验收标准1：DTO 类可被其他模块引用"],
+    "boundary": "只定义接口和 DTO，不写业务逻辑",
+    "test": "unit: 编译通过即可",
+    "references": [],
+    "dataSamples": [],
+    "passes": false
+  },
+  {
+    "id": "2",
+    "domain": "backend",
+    "app": "order-service",
+    "appPath": "../order-service",
+    "dependsOn": ["share-api:1"],
+    "complexity": "medium",
+    "category": "feature",
+    "description": "实现订单服务业务逻辑（依赖 share 包的 DTO，编译级依赖需设 dependsOn）",
+    "steps": ["步骤1", "步骤2"],
+    "implementationGuide": {
+      "targetFiles": ["src/service/OrderService.java"],
+      "approach": "实现订单创建逻辑",
+      "referenceCode": [],
+      "dataFlow": "请求 → OrderService → OrderRepository",
+      "keyInterfaces": ["引用 share-api 的 OrderDTO"]
     },
     "apiContracts": [
       {
-        "method": "GET",
-        "path": "/api/users",
-        "description": "获取用户列表",
-        "request": { "query": { "page": "number", "size": "number" } },
-        "response": { "code": 200, "body": { "list": "User[]", "total": "number" } }
+        "method": "POST",
+        "path": "/api/orders",
+        "description": "创建订单",
+        "request": { "body": { "userId": "string", "items": "OrderItem[]" } },
+        "response": { "code": 200, "body": { "orderId": "string" } }
       }
     ],
-    "acceptance": ["验收标准1：具体验证步骤"],
-    "boundary": "只改什么，不改什么",
-    "test": "unit: 测试策略和关键用例",
+    "acceptance": ["验收标准1"],
+    "test": "unit: 测试订单创建逻辑",
+    "references": [],
+    "dataSamples": [],
+    "passes": false
+  },
+  {
+    "id": "3",
+    "domain": "backend",
+    "app": "user-service",
+    "appPath": "../user-service",
+    "dependsOn": ["share-api:1"],
+    "complexity": "medium",
+    "category": "feature",
+    "description": "实现用户服务（依赖 share 包的 DTO，但与 order-service 无编译依赖，可并行开发）",
+    "steps": ["步骤1", "步骤2"],
+    "implementationGuide": {
+      "targetFiles": ["src/service/UserService.java"],
+      "approach": "实现用户查询逻辑",
+      "referenceCode": [],
+      "dataFlow": "请求 → UserService → UserRepository",
+      "keyInterfaces": ["引用 share-api 的 UserDTO"]
+    },
+    "acceptance": ["验收标准1"],
+    "test": "unit: 测试用户查询逻辑",
+    "references": [],
+    "dataSamples": [],
+    "passes": false
+  },
+  {
+    "id": "4",
+    "domain": "frontend",
+    "app": "admin-web",
+    "appPath": "../admin-web",
+    "dependsOn": [],
+    "complexity": "medium",
+    "category": "ui",
+    "description": "实现前端订单页面（通过 apiContracts 对接后端，不同 domain 无需 dependsOn，可与后端并行开发）",
+    "steps": ["步骤1", "步骤2"],
+    "implementationGuide": {
+      "targetFiles": ["src/pages/OrderList.tsx"],
+      "approach": "基于 apiContracts 定义的接口规格开发",
+      "referenceCode": [],
+      "dataFlow": "页面 → API 调用（参考任务 2 的 apiContracts） → 渲染",
+      "keyInterfaces": ["调用任务 2 定义的 POST /api/orders"]
+    },
+    "acceptance": ["验收标准1"],
+    "test": "unit: 测试组件渲染",
     "references": [],
     "dataSamples": [],
     "passes": false
   }
 ]
+
+> **dependsOn 设置说明**：
+> - 任务 2、3 依赖任务 1（share 包）：编译级依赖，import 了 share 包新增的类
+> - 任务 2 和 3 之间无依赖：虽然都是后端，但不同 app 间通过 HTTP 调用，运行时依赖不设 dependsOn
+> - 任务 4（前端）无依赖：不同 domain，通过 apiContracts 约定接口，可与后端并行开发
 
 ## 风险与注意事项
 
