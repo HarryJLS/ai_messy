@@ -173,7 +173,7 @@ description: 读取 /plan-init 生成的计划文件，将任务列表写入 .pl
 
 Write 工具 → `{appPath}/.plan/dev-YYYY-MM-DD.log`，内容与单应用模式的操作 1 相同（`=== Agent 初始化日志 ===` 模板），但 Files 行改为 `{appPath}/.plan/features.json | {appPath}/.plan/dev-YYYY-MM-DD.log`。
 
-**操作 M3：创建 app-registry.json 索引**
+**操作 M3：创建 app-registry.json 索引（含编译顺序）**
 
 Write 工具 → `.plan/app-registry.json`（当前编排目录）：
 
@@ -183,11 +183,52 @@ Write 工具 → `.plan/app-registry.json`（当前编排目录）：
     { "app": "order-api", "appPath": "../order-api" },
     { "app": "order-service", "appPath": "../order-service" },
     { "app": "admin-web", "appPath": "../admin-web" }
+  ],
+  "buildOrder": [
+    {
+      "app": "order-api",
+      "appPath": "../order-api",
+      "buildCmd": "mvn clean install -DskipTests -q",
+      "reason": "share 包，被 order-service 编译依赖（dependsOn）"
+    },
+    {
+      "app": "order-service",
+      "appPath": "../order-service",
+      "buildCmd": "mvn compile -q",
+      "reason": "业务服务，依赖 order-api"
+    },
+    {
+      "app": "admin-web",
+      "appPath": "../admin-web",
+      "buildCmd": null,
+      "reason": "前端应用，无编译依赖"
+    }
   ]
 }
 ```
 
 `app` 取自任务的 `app` 字段，`appPath` 取自任务的 `appPath` 字段。每个唯一的 app/appPath 组合一条记录。
+
+**buildOrder 推断规则**：
+
+从任务列表中的跨应用 `dependsOn`（`app:id` 格式）推断应用间的编译依赖链，生成拓扑排序后的构建顺序：
+
+1. 扫描所有任务的 `dependsOn` 字段，找出跨应用依赖（`app:id` 格式）
+2. 构建应用间的依赖图：如果 app B 的某个任务 dependsOn 了 `app-A:X`，则 app B 依赖 app A
+3. 拓扑排序：被依赖的应用排在前面
+4. 无跨应用依赖的应用可以并行执行（排序不分先后）
+
+**buildCmd 推断规则**：
+
+| 条件 | buildCmd |
+|------|----------|
+| 被其他应用编译依赖的包（如 share/common/api 包） | `mvn clean install -DskipTests -q`（需安装到本地仓库） |
+| 有 `pom.xml` 的普通后端应用 | `mvn compile -q` |
+| 有 `build.gradle` 的应用 | `gradle build -x test -q` |
+| 有 `go.mod` 的应用 | `go build ./...` |
+| 前端应用（有 `package.json`） | `null`（前端不参与后端编译链） |
+
+plan-next / backend-single / fullstack-single 在切换应用执行前，应先按 buildOrder 顺序执行依赖应用的 buildCmd（如果该应用有已完成的任务需要编译）。
 
 **操作 M4：追加日志到各 app 的 dev log**
 
