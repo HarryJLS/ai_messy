@@ -285,6 +285,10 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 3. 改进命名（变量、方法、类）
 4. 简化条件表达式
 5. 运行测试 → 确认仍然全部通过
+6. **注释检查**：扫描本次新增/修改的代码：
+   - 补充缺失的必要注释：公开 API 的 doc 注释、interface 实现方法的 doc 注释、非显而易见逻辑的 why 注释
+   - 删除尾部注释（行末 `// xxx` 风格）和废话注释（如 `// 获取用户名`）
+   - 不要给简单直观的代码加注释
 
 **De-Sloppify 检查**（仅 `complexity: medium/large` 时执行）：
 
@@ -296,7 +300,7 @@ backend-single/frontend-single/fullstack-single 调用 plan-next 时应传入对
 
 发现问题直接清理，运行测试确认仍然通过。
 
-**精简模式**（`complexity: small`）：只执行第 1 项（DRY），跳过其余。
+**精简模式**（`complexity: small`）：只执行第 1 项（DRY）和第 6 项（注释检查），跳过其余。
 
 ⚠️ REFACTOR 只优化结构，不改变行为。如果测试变红，立即回退。
 
