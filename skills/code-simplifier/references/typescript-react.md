@@ -223,6 +223,84 @@ const sortedItems = useMemo(
 
 useMemo/useCallback 本身有开销。只在以下场景使用：昂贵计算、作为依赖传给子组件的 memo、作为 useEffect 依赖。
 
+## 7. 函数提取
+
+非组件的工具函数/服务方法同样需要拆分。提取后在跳转处加注释。
+
+```typescript
+// Before — 一个函数做四件事
+async function processCheckout(cart: Cart, user: User): Promise<Order> {
+  // 校验库存
+  for (const item of cart.items) {
+    const stock = await inventoryApi.getStock(item.skuId);
+    if (stock < item.quantity) {
+      throw new InsufficientStockError(item.skuId);
+    }
+  }
+
+  // 计算折扣
+  const subtotal = cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const discount = await promotionApi.getDiscount(user.id, subtotal);
+  const total = subtotal - discount;
+
+  // 创建支付
+  const paymentIntent = await paymentApi.create({
+    amount: total,
+    userId: user.id,
+  });
+  const order = await orderApi.create({
+    cartId: cart.id,
+    paymentId: paymentIntent.id,
+    total,
+  });
+
+  // 发确认邮件
+  await emailApi.sendConfirmation(user.email, order);
+  return order;
+}
+
+// After — 编排入口 + 模块内函数
+async function processCheckout(cart: Cart, user: User): Promise<Order> {
+  // 库存不足抛 InsufficientStockError，前端据此展示补货提示
+  await validateStock(cart.items);
+  const total = await calculateTotal(cart, user);
+  const order = await createPaymentAndOrder(cart, user, total);
+  // fire-and-forget：邮件失败不阻塞结账
+  emailApi.sendConfirmation(user.email, order).catch(console.error);
+  return order;
+}
+
+async function validateStock(items: CartItem[]): Promise<void> {
+  for (const item of items) {
+    const stock = await inventoryApi.getStock(item.skuId);
+    if (stock < item.quantity) {
+      throw new InsufficientStockError(item.skuId);
+    }
+  }
+}
+
+async function calculateTotal(cart: Cart, user: User): Promise<number> {
+  const subtotal = cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const discount = await promotionApi.getDiscount(user.id, subtotal);
+  return subtotal - discount;
+}
+
+async function createPaymentAndOrder(
+  cart: Cart,
+  user: User,
+  total: number,
+): Promise<Order> {
+  const paymentIntent = await paymentApi.create({ amount: total, userId: user.id });
+  return orderApi.create({
+    cartId: cart.id,
+    paymentId: paymentIntent.id,
+    total,
+  });
+}
+```
+
+两处注释：`validateStock` 可能中断流程，`sendConfirmation` 改为 fire-and-forget 模式——这些跳转行为需要读者注意。
+
 ## 语言特有反模式
 
 - `any` 类型 — 用 `unknown` + 类型守卫，或定义具体类型

@@ -201,6 +201,101 @@ export default {
 }
 ```
 
+## 6. setup 逻辑提取
+
+`<script setup>` 中逻辑过长时，按职责提取为独立函数或 composable。提取后在跳转处加注释。
+
+```vue
+<!-- Before — setup 中混合了表单校验、提交、通知 -->
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const form = ref({ name: '', email: '' })
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+async function handleSubmit() {
+  // 校验
+  if (!form.value.name.trim()) {
+    error.value = '名称不能为空'
+    return
+  }
+  if (!form.value.email.includes('@')) {
+    error.value = '邮箱格式不正确'
+    return
+  }
+
+  // 提交
+  loading.value = true
+  error.value = null
+  try {
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      body: JSON.stringify(form.value),
+    })
+    if (!res.ok) throw new Error('提交失败')
+    const user = await res.json()
+
+    // 通知
+    ElMessage.success('创建成功')
+    emit('created', user)
+  } catch (e) {
+    error.value = (e as Error).message
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+
+<!-- After — 按职责提取 -->
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const form = ref({ name: '', email: '' })
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+function validateForm(): string | null {
+  if (!form.value.name.trim()) return '名称不能为空'
+  if (!form.value.email.includes('@')) return '邮箱格式不正确'
+  return null
+}
+
+async function submitUser(data: { name: string; email: string }) {
+  const res = await fetch('/api/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('提交失败')
+  return res.json()
+}
+
+async function handleSubmit() {
+  // 校验失败提前返回，不发请求
+  const validationError = validateForm()
+  if (validationError) {
+    error.value = validationError
+    return
+  }
+
+  loading.value = true
+  error.value = null
+  try {
+    const user = await submitUser(form.value)
+    ElMessage.success('创建成功')
+    // 通知父组件刷新列表
+    emit('created', user)
+  } catch (e) {
+    error.value = (e as Error).message
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+```
+
+注释加在两处跳转：校验失败的提前返回，以及 `emit` 触发父组件行为。
+
 ## 语言特有反模式
 
 - `this.$forceUpdate()` — 说明响应式数据结构有问题，应修复数据声明

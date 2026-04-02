@@ -130,6 +130,74 @@ def timer():
 
 简单的 enter/exit 用 `@contextmanager` 比写完整类更简洁。
 
+## 6. 方法提取
+
+将多职责函数拆分为 `_private` 方法。提取后在跳转处加注释。
+
+```python
+# Before — 一个方法做四件事
+def process_order(self, order_data: dict) -> OrderResult:
+    # 校验
+    if not order_data.get("items"):
+        raise ValueError("items cannot be empty")
+    if not order_data.get("user_id"):
+        raise ValueError("user_id is required")
+
+    # 计算价格
+    total = sum(
+        item["price"] * item["quantity"]
+        for item in order_data["items"]
+    )
+    discount = self.promotion_service.calculate_discount(order_data["user_id"], total)
+    final_total = total - discount
+
+    # 保存
+    order = Order(
+        user_id=order_data["user_id"],
+        items=order_data["items"],
+        total=final_total,
+    )
+    self.order_repo.save(order)
+
+    # 通知
+    self.event_bus.publish("order_created", order.id)
+    return OrderResult.from_order(order)
+
+# After — 编排入口 + _private 方法
+def process_order(self, order_data: dict) -> OrderResult:
+    self._validate_order(order_data)
+    total = self._calculate_total(order_data["items"], order_data["user_id"])
+    order = self._save_order(order_data, total)
+    # 事件驱动：下游监听者异步处理库存扣减、邮件等
+    self._publish_order_created(order)
+    return OrderResult.from_order(order)
+
+def _validate_order(self, order_data: dict) -> None:
+    if not order_data.get("items"):
+        raise ValueError("items cannot be empty")
+    if not order_data.get("user_id"):
+        raise ValueError("user_id is required")
+
+def _calculate_total(self, items: list[dict], user_id: str) -> Decimal:
+    total = sum(item["price"] * item["quantity"] for item in items)
+    discount = self.promotion_service.calculate_discount(user_id, total)
+    return total - discount
+
+def _save_order(self, order_data: dict, total: Decimal) -> Order:
+    order = Order(
+        user_id=order_data["user_id"],
+        items=order_data["items"],
+        total=total,
+    )
+    self.order_repo.save(order)
+    return order
+
+def _publish_order_created(self, order: Order) -> None:
+    self.event_bus.publish("order_created", order.id)
+```
+
+注释只在事件发布处——这是一个隐式跳转，读者需要知道下游由谁处理。
+
 ## 语言特有反模式
 
 - `type(x) == str` — 用 `isinstance(x, str)`

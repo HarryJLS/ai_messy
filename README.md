@@ -2,6 +2,11 @@
 
 Claude Code Plugin — AI Agent 工作流和开发指南技能合集（中文）。
 
+## 前置条件
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI 已安装并可用
+- 已通过 `claude` 命令进入 Claude Code 交互界面
+
 ## 安装
 
 ```bash
@@ -12,7 +17,7 @@ Claude Code Plugin — AI Agent 工作流和开发指南技能合集（中文）
 /plugin install ai_messy@ai_messy
 ```
 
-安装后即可通过 `/skill-name` 命令调用所有技能。
+安装完成后，所有 `/skill-name` 命令即可在任意项目中使用。
 
 ---
 

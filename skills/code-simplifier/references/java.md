@@ -149,6 +149,93 @@ public class UserDTO {
 
 项目已引入 Lombok 时，用 `@Data`、`@Builder`、`@RequiredArgsConstructor` 替代手写样板。未引入 Lombok 时不建议为此引入依赖。
 
+## 6. 方法提取
+
+将多职责方法拆分为 private 原子方法，原方法作为编排入口。在调用链的关键跳转处加注释说明目的。
+
+**提取信号**：
+- 方法内有 `//` 注释分隔的逻辑块
+- 混合了校验、业务逻辑、持久化、结果转换
+- 方法参数在不同段落中只部分使用
+
+```java
+// Before — 一个方法做四件事
+public OrderResult createOrder(OrderRequest req) {
+    // 参数校验
+    if (req.getItems() == null || req.getItems().isEmpty()) {
+        throw new IllegalArgumentException("items cannot be empty");
+    }
+    if (req.getUserId() == null) {
+        throw new IllegalArgumentException("userId is required");
+    }
+
+    // 库存检查
+    for (OrderItem item : req.getItems()) {
+        int stock = inventoryService.getStock(item.getSkuId());
+        if (stock < item.getQuantity()) {
+            throw new BusinessException("insufficient stock: " + item.getSkuId());
+        }
+    }
+
+    // 创建订单
+    Order order = new Order();
+    order.setUserId(req.getUserId());
+    order.setItems(req.getItems());
+    order.setTotalAmount(calculateTotal(req.getItems()));
+    order.setStatus(OrderStatus.CREATED);
+    orderRepository.save(order);
+
+    // 发通知
+    emailService.sendOrderConfirmation(order);
+    return OrderResult.from(order);
+}
+
+// After — 编排入口 + 原子方法，跳转处加注释
+public OrderResult createOrder(OrderRequest req) {
+    validateOrderRequest(req);
+    // 库存不足会抛 BusinessException，阻止后续创建
+    checkInventory(req.getItems());
+    Order order = buildAndSaveOrder(req);
+    // 异步发送，不影响订单创建结果
+    notifyOrderCreated(order);
+    return OrderResult.from(order);
+}
+
+private void validateOrderRequest(OrderRequest req) {
+    if (req.getItems() == null || req.getItems().isEmpty()) {
+        throw new IllegalArgumentException("items cannot be empty");
+    }
+    if (req.getUserId() == null) {
+        throw new IllegalArgumentException("userId is required");
+    }
+}
+
+private void checkInventory(List<OrderItem> items) {
+    for (OrderItem item : items) {
+        int stock = inventoryService.getStock(item.getSkuId());
+        if (stock < item.getQuantity()) {
+            throw new BusinessException("insufficient stock: " + item.getSkuId());
+        }
+    }
+}
+
+private Order buildAndSaveOrder(OrderRequest req) {
+    Order order = new Order();
+    order.setUserId(req.getUserId());
+    order.setItems(req.getItems());
+    order.setTotalAmount(calculateTotal(req.getItems()));
+    order.setStatus(OrderStatus.CREATED);
+    orderRepository.save(order);
+    return order;
+}
+
+private void notifyOrderCreated(Order order) {
+    emailService.sendOrderConfirmation(order);
+}
+```
+
+注释只加在流程跳转处：`checkInventory` 可能中断流程（抛异常），`notifyOrderCreated` 是异步不影响主流程。方法名已经说明做什么，注释解释"为什么这里需要注意"。
+
 ## 语言特有反模式
 
 - 过度使用继承 — 优先组合，继承层级不超过 2 层
