@@ -219,6 +219,7 @@
 | `.plan/task.md` | 技术方案文档（深度模式产出） | `/plan-init` |
 | `.plan/features.json` | 任务的单一事实来源 | `/plan-write` |
 | `.plan/dev-YYYY-MM-DD.log` | 统一开发日志 | `/plan-write` |
+| `.plan/test-cases.json` | 用户提供的独立测试用例 | `/plan-write`（从计划文件提取） |
 | `.plan/pr-description.md` | PR 描述 | team 编排 |
 | `.plan/features.backup.*.json` | 任务备份 | `/plan-init` |
 
