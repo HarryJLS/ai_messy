@@ -1,13 +1,18 @@
-# AI Messy
+# 🤖 AI Messy
 
-Claude Code Plugin — AI Agent 工作流和开发指南技能合集（中文）。
+[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blue?style=flat-square)](https://docs.anthropic.com/en/docs/claude-code)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-## 前置条件
+> **为 Claude Code 打造的生产级 AI Agent 工作流与开发规范技能合集（中文）**
+
+AI Messy 提供了一套完整的结构化开发工作流，集成了基于 TDD 的任务管理、多 Agent 团队编排、代码审查与质量保障工具，致力于帮助开发者在 AI 辅助下实现高信噪比、高质量的渐进式交付。
+
+## 🚀 前置条件
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI 已安装并可用
 - 已通过 `claude` 命令进入 Claude Code 交互界面
 
-## 安装
+## 📦 安装
 
 ```bash
 # 1. 添加 marketplace
@@ -21,9 +26,24 @@ Claude Code Plugin — AI Agent 工作流和开发指南技能合集（中文）
 
 ---
 
-## Skills 总览
+## 🌟 日常推荐工作流（Best Practices）
 
-### 开发流程
+**后端开发工作流（最常用）：**
+由于复杂需求在单次会话中容易达到上下文瓶颈，强烈推荐使用以下**“跨会话两步走”**策略：
+1. **阶段一 (会话 A)**: `/plan-init` ➔ 专注需求讨论、架构梳理与任务拆解，确保思路完全清晰。
+2. **阶段二 (全新会话 B)**: `/backend-single` ➔ 提供纯净的上下文，Agent 将自动读取阶段一的产物（`features.json`），专注、高效地完成所有代码编写与简化逻辑。
+
+**全栈开发工作流：**
+1. **会话 A**: `/plan-init` (分解任务，标记 domain + apiContracts)
+2. **会话 B**: `/backend-single` (执行 backend 任务)
+3. **会话 C**: `/frontend-single` (执行 frontend 任务)
+4. **会话 D**: `/backend-test` / `/frontend-test` (集成与测试验证)
+
+---
+
+## 🛠️ Skills 总览
+
+### 📋 开发流程 (Workflow)
 
 基于 TDD 的结构化开发工作流，支持任务管理、统一日志、上下文恢复。
 
@@ -31,353 +51,166 @@ Claude Code Plugin — AI Agent 工作流和开发指南技能合集（中文）
 |------|------|
 | `/plan-init` | 需求分析和任务分解（三档自适应：模糊需求→深度模式，明确文档→标准模式，已有JSON→极速模式） |
 | `/plan-write` | 读取审批后的计划文件，写入 `features.json` 和 `dev-YYYY-MM-DD.log` |
-| `/plan-next` | 执行下一个任务（TDD: RED → GREEN → COMMIT） |
+| `/plan-next` | 执行下一个任务（TDD: RED 🔴 → GREEN 🟢 → COMMIT 📦） |
 
 **手动执行流程：**
+`/plan-init` ➔ `/plan-write` ➔ `/plan-next` (循环执行)
 
-```
-/plan-init → /plan-write → /plan-next (循环)
-```
+### 👥 Agent 团队编排 (Team Orchestration)
 
-**单个任务执行：**
+多 Agent 团队编排模式，自动串联完整开发流水线，无需手动逐个调用。
 
-```
-READ → EXPLORE → PLAN → RED 🔴 → IMPLEMENT → GREEN 🟢 → COMMIT
-```
+| 命令 | 适用场景 | 核心动作 |
+|------|----------|----------|
+| `/backend-team` | 现有后端项目开发 | 预研 + 初始化 + TDD开发 + 简化 + 多维CR |
+| `/framework-team` | 从零搭建新项目 | 架构设计 + 脚手架生成 + TDD开发 + 验证 + CR |
+| `/frontend-team` | 前端开发 (React/Vue) | UI系统设计 + 方案预研 + 开发 + UI/UX打磨 + CR |
+| `/fullstack-team` | 全栈项目开发 | 后端预研 + 前端设计 → 后端开发 → 前端对接 → CR |
 
-### Agent 团队编排
+> 💡 *详见下方 [团队编排详情](#-团队编排详情) 章节获取流水线架构图。*
 
-多 Agent 团队编排模式，自动编排完整开发流水线，无需手动逐个调用。
-
-| 命令 | 用途 | 适用场景 |
-|------|------|----------|
-| `/backend-team` | 全流程编排：预研 + 初始化 + 开发 + 简化 + 多维 CR | 现有后端项目开发 |
-| `/framework-team` | 脚手架编排：架构设计 + 脚手架 + TDD + 验证 + CR | 从零搭建新项目 |
-| `/frontend-team` | 前端编排：设计系统 + UI 方案 + 开发 + UI/UX 打磨 + CR | 前端开发（React/Vue3/Vue2） |
-| `/fullstack-team` | 全栈编排：后端预研 + 前端设计 → 后端开发 → 前端对接 → 打磨 → CR | 全栈开发 |
-
-> 详见下方 [团队编排详情](#团队编排详情) 章节。
-
-### 精简版编排（Single 模式）
+### ⚡ 精简版编排 (Single Mode)
 
 无 Agent Team、无方案预研、无 CR，适合跨会话独立执行。需先运行 `/plan-init` 完成任务分解。
 
-| 命令 | 用途 | 适用场景 |
-|------|------|----------|
-| `/backend-single` | plan-write → plan-next 循环 → simplifier → fixer | 后端开发（自动按 domain 过滤） |
-| `/frontend-single` | plan-write → plan-next 循环 → UI/UX 检查 → simplifier → fixer | 前端开发（自动按 domain 过滤） |
-| `/fullstack-single` | plan-write → 后端 plan-next → 前端 plan-next → simplifier → fixer | 全栈开发（分两轮执行） |
+| 命令 | 适用场景 | 执行链路 |
+|------|----------|----------|
+| `/backend-single` | 后端开发 | plan-write → plan-next 循环 → simplifier → fixer |
+| `/frontend-single`| 前端开发 | plan-write → plan-next 循环 → UI/UX 检查 → simplifier → fixer |
+| `/fullstack-single`| 全栈开发 | plan-write → 后端 plan-next → 前端 plan-next → simplifier → fixer |
 
-**推荐跨会话工作流：**
 
-```
-会话 A: /plan-init        → 分解任务（标记 domain + apiContracts）
-会话 B: /backend-single   → 执行 backend 任务
-会话 C: /frontend-single  → 执行 frontend 任务
-会话 D: /backend-test     → 后端测试验证
-会话 E: /frontend-test    → 前端测试验证
-```
+### 💎 代码质量 (Code Quality)
 
-### 代码质量
+| 命令 | 用途 | 支持的规范标准 |
+|------|------|----------------|
+| `/code-review` | 审查代码变更，自动检测语言并应用规范 | Java(阿里规范)、Go(字节规范)、React/Vue、Python |
+| `/code-fixer` | 自动修复代码规范问题 | 小修自动，大改需确认，**严禁修改命名** |
+| `/code-simplifier` | 简化优化代码，提升可维护性 | 提升清晰度、一致性，保持原有功能不变 |
 
-| 命令 | 用途 |
-|------|------|
-| `/code-review` | 审查代码变更，自动检测语言并应用对应规范 |
-| `/code-fixer` | 自动修复代码规范问题（小修自动，大改需确认，禁改命名） |
-| `/code-simplifier` | 简化优化代码，提升可维护性 |
-
-**支持的规范：**
-
-| 文件模式 | 规范 |
-|----------|------|
-| `*.java` | 阿里巴巴 Java 开发规范 |
-| `*.go` | 字节跳动 Go 开发规范 |
-| `*.tsx`, `*.jsx` | React/TypeScript 最佳实践 |
-| `*.py` | Python/FastAPI 最佳实践 |
-
-### 测试与验证
+### 🧪 测试与验证 (Testing & Verification)
 
 | 命令 | 用途 |
 |------|------|
-| `/unit-test` | 自动检测语言，生成符合最佳实践的单元测试 |
-| `/backend-test` | 后端测试验证（单元测试 + API 契约验证 + 验收标准检查），基于 features.json 驱动 |
-| `/frontend-test` | 前端测试验证（已有测试 + E2E 验证 + 验收标准检查），基于 features.json 驱动 |
+| `/unit-test` | 自动检测语言，生成符合最佳实践的单元测试 (支持 Go, Java 等) |
+| `/backend-test` | 后端测试验证（单元测试 + API 契约验证 + 验收标准检查） |
+| `/frontend-test` | 前端测试验证（已有测试 + E2E 验证 + 验收标准检查） |
 
-### Git 工具
+### 🧰 实用工具 (Utilities)
 
-| 命令 | 用途 |
-|------|------|
-| `/git-quick` | 快捷 pull/commit/push/checkout 一键完成 |
-| `/git-worktree` | Git worktree 创建/删除/列出 |
+**Git 操作**
+- `/git-quick`: 快捷 pull/commit/push/checkout 一键完成。
+- `/git-worktree`: Git worktree 创建、删除与查看。
 
-### 持续学习
+**项目与知识管理**
+- `/claude-md-manager`: 管理项目 `CLAUDE.md`，结构化沉淀开发经验。
+- `/add_or_update_skill`: 同步 skill 到多平台。
+- `/setup-permissions`: 配置 Claude Code 权限白名单。
+- `/skill-creator` / `/find-skills`: 创建新 Skill 或发现/安装现有 Skill。
 
-| 命令 | 用途 |
-|------|------|
-| `/learn` | 手动提取当前会话中的可复用模式，质量评估后保存 |
-| `/instinct` | 自动观察 + 原子级学习 + 演化（hooks 驱动，项目隔离） |
-
-### Skill 与项目管理
-
-| 命令 | 用途 |
-|------|------|
-| `/add_or_update_skill` | 同步 skill 到 Claude/Gemini 多平台 |
-| `/setup-permissions` | 配置 Claude Code 权限白名单 |
-| `/claude-md-manager` | 管理项目 CLAUDE.md，结构化沉淀开发经验 |
-| `/skill-creator` | 创建和打包新 skill |
-| `/find-skills` | 发现和安装 agent skills |
-
-### 其他工具
-
-| 命令 | 用途 |
-|------|------|
-| `/frontend-design` | 创建高质量前端界面 |
-| `/ui-ux-pro-max` | UI/UX 设计智能（50+ 风格、97+ 配色、57+ 字体搭配） |
-| `/markitdown` | 文件格式转 Markdown（PDF、DOCX、PPTX、图片等） |
-| `/notebooklm-skill` | 查询 Google NotebookLM |
-| `/planning-with-files` | Manus 风格文件化规划，适合复杂研究任务 |
+**持续学习与设计辅助**
+- `/learn` / `/instinct`: 提取可复用模式，原子级观察与学习。
+- `/ui-ux-pro-max` / `/frontend-design`: 强大的 UI/UX 设计智能与生成能力。
+- `/markitdown`: 格式转换神器 (PDF/DOCX/图片 等转为 Markdown)。
 
 ---
 
-## 团队编排详情
+## 🏗️ 团队编排详情
 
-### backend-team（现有项目开发）
+### `/backend-team` (现有后端项目)
 
-多 Agent 团队，自动编排完整开发流水线。详见 `skills/backend-team/SKILL.md`。
-
-**团队角色：**
-
-| 角色 | Agent | 职责 |
-|------|-------|------|
-| lead | self | 方案预研、Research & Reuse、任务分解、计划写入、全量验证、编排协调 |
-| developer | general-purpose (bypassPermissions) | TDD 任务执行循环 |
-| polisher | general-purpose (bypassPermissions) | 代码简化 + 风格修复 |
-| build-fixer | build-error-resolver（项目 agent） | 验证失败时自动修复 build/lint/type 错误 |
-| plan-reviewer | code-architect（项目 agent） | 零上下文方案审查，挑战完整性和合理性 |
-| reviewer | code-reviewer（项目 agent） | 生产级 CR，拥有完整代码上下文 |
-| blind-reviewer | code-reviewer（项目 agent） | 零上下文盲审，仅基于 PR 描述 + diff |
-| security-reviewer | security-reviewer（项目 agent） | 安全审查，聚焦漏洞检测（条件触发） |
-
-**流水线：**
-
-```
-Research & Reuse（lead）
-  → 方案预研（lead）
-  → 方案审查（plan-reviewer）
-  → 任务分解 + 计划写入（lead）
-  → TDD 开发循环（developer）
-  → 全量验证 + 自动修复（lead + build-fixer）
-  → 代码打磨（polisher）
-  → 多维代码审查（reviewer + blind-reviewer + security-reviewer）
-  → 报告
+```mermaid
+graph LR
+  A[预研 & 复用<br/>Lead] --> B[方案审查<br/>Plan-Reviewer]
+  B --> C[任务分解&写入<br/>Lead]
+  C --> D[TDD 循环<br/>Developer]
+  D --> E[验证 & 修复<br/>Lead+Fixer]
+  E --> F[代码打磨<br/>Polisher]
+  F --> G[多维代码审查<br/>Reviewers]
 ```
 
-### framework-team（新项目脚手架）
+### `/framework-team` (新项目脚手架)
 
-面向"从零开始"的新项目场景。详见 `skills/framework-team/SKILL.md`。
+阶段 1 用架构设计（技术栈选择 → 目录结构 → 模块划分）替代现有代码探索。
 
-**与 backend-team 的核心差异：** 阶段 1 用架构设计（技术栈选择 → 目录结构 → 模块划分）替代代码探索，脚手架任务使用 TDD 简化模式。
-
-**流水线：**
-
-```
-需求收集（lead）
-  → 架构设计（lead）
-  → 方案审查（plan-reviewer）
-  → 任务分解 + 计划写入（lead）
-  → 脚手架 + TDD 开发（developer）
-  → 全量验证（lead）
-  → 代码打磨（polisher）
-  → 双重代码审查（reviewer + blind-reviewer）
-  → 报告
+```mermaid
+graph LR
+  A[架构设计<br/>Lead] --> B[方案审查<br/>Plan-Reviewer]
+  B --> C[任务分解<br/>Lead]
+  C --> D[脚手架&TDD<br/>Developer]
+  D --> E[全量验证<br/>Lead]
+  E --> F[代码打磨<br/>Polisher]
+  F --> G[双重审查<br/>Reviewers]
 ```
 
-### frontend-team（前端开发）
+### `/frontend-team` (前端开发)
 
-面向前端开发场景，支持 React、Vue3、Vue2。详见 `skills/frontend-team/SKILL.md`。
+阶段 1 集成设计智能，阶段 4 增加 UI/UX Pre-Delivery 检查。
 
-**与 backend-team 的核心差异：** 阶段 1 集成 ui-ux-pro-max + frontend-design 生成设计系统和 UI 方案，阶段 4 polisher 增加 UI/UX Pre-Delivery Checklist。
-
-**团队角色：**
-
-| 角色 | Agent | 职责 |
-|------|-------|------|
-| lead | self | 需求分析、设计系统生成、UI 方案、任务分解、编排协调 |
-| developer | general-purpose (bypassPermissions) | 前端组件/页面实现 |
-| polisher | general-purpose (bypassPermissions) | UI/UX 规范检查 + 代码简化 + 风格修复 |
-| build-fixer | build-error-resolver（项目 agent） | 验证失败时自动修复 build/lint/type 错误 |
-| plan-reviewer | code-architect（项目 agent） | 零上下文方案审查 |
-| reviewer | code-reviewer（项目 agent） | 前端 CR |
-| blind-reviewer | code-reviewer（项目 agent） | 零上下文盲审 |
-| security-reviewer | security-reviewer（项目 agent） | 前端安全审查（XSS、敏感数据暴露、CSP，条件触发） |
-
-**流水线：**
-
-```
-设计系统生成（lead）
-  → UI 方案预研（lead）
-  → 方案审查（plan-reviewer）
-  → 任务分解 + 计划写入（lead）
-  → 前端开发（developer）
-  → 全量验证 + 自动修复（lead + build-fixer）
-  → UI/UX 打磨（polisher）
-  → 多维代码审查（reviewer + blind-reviewer + security-reviewer）
-  → 报告
+```mermaid
+graph LR
+  A[UI方案预研<br/>Lead] --> B[方案审查<br/>Plan-Reviewer]
+  B --> C[任务分解<br/>Lead]
+  C --> D[前端开发<br/>Developer]
+  D --> E[验证与修复<br/>Lead+Fixer]
+  E --> F[UI/UX 打磨<br/>Polisher]
+  F --> G[多维代码审查<br/>Reviewers]
 ```
 
-### fullstack-team（全栈开发）
+### `/fullstack-team` (全栈开发)
 
-面向全栈开发场景，合并后端预研 + 前端设计系统，按"先后端 API → 再前端对接"开发。详见 `skills/fullstack-team/SKILL.md`。
+先设计后端与 API 契约，后开发前端，全链路闭环。
 
-**与 backend-team / frontend-team 的核心差异：** 任务通过 `domain` 字段区分 backend/frontend，阶段 1 合并后端预研和前端设计，开发阶段分两轮（先后端→验证→再前端→验证），后端任务含 `apiContracts` 定义前端需要的接口契约。
-
-**流水线：**
-
-```
-Research & Reuse（lead）
-  → 后端方案预研（lead）
-  → 前端设计系统（lead）
-  → 方案审查（plan-reviewer）
-  → 任务分解 + 计划写入（lead）
-  → 后端开发（developer）→ 后端验证（lead）
-  → 前端开发（developer）→ 前端验证（lead）
-  → 全量验证 + 自动修复（lead + build-fixer）
-  → 代码打磨（polisher）
-  → 多维代码审查（reviewer + blind-reviewer + security-reviewer）
-  → 报告
+```mermaid
+graph LR
+  A[全栈方案预研<br/>Lead] --> B[任务分解<br/>Lead]
+  B --> C[后端开发&验证<br/>Developer]
+  C --> D[前端开发&验证<br/>Developer]
+  D --> E[全量验证修复<br/>Lead+Fixer]
+  E --> F[代码打磨<br/>Polisher]
+  F --> G[多维代码审查<br/>Reviewers]
 ```
 
 ---
 
-## 快速开始
+## 📂 目录结构
 
-### 一键全流程开发
-
-```bash
-/backend-team       # 现有后端项目开发
-/framework-team     # 从零搭建新项目
-/frontend-team      # 前端开发
-/fullstack-team     # 全栈开发
-```
-
-### 手动逐步执行
-
-```bash
-/plan-init           # 需求分析和任务分解（自适应深度）
-/plan-write          # 写入任务列表
-/plan-next           # 执行任务（循环）
-```
-
-### 精简版跨会话执行
-
-```bash
-/backend-single      # 后端精简开发（自动过滤 domain=backend）
-/frontend-single     # 前端精简开发（自动过滤 domain=frontend）
-/fullstack-single    # 全栈精简开发（先后端再前端）
-```
-
-### 代码质量
-
-```bash
-/code-review         # 审查变更
-/code-fixer          # 修复规范问题
-/code-simplifier     # 简化优化
-```
-
-### 测试与验证
-
-```bash
-/unit-test           # 生成单元测试
-/backend-test        # 后端测试验证（基于 features.json）
-/frontend-test       # 前端测试验证（基于 features.json）
-```
-
----
-
-## 目录结构
-
-```
+```text
 ai_messy/
-├── .claude-plugin/        # Plugin 清单
+├── .claude-plugin/        # Plugin 清单与配置
 │   ├── plugin.json
 │   └── marketplace.json
-├── agents/                # 项目级 Agent 定义
+├── agents/                # 项目级 Agent Prompt 定义
 │   ├── build-error-resolver.md
 │   ├── code-architect.md
 │   ├── code-reviewer.md
 │   └── security-reviewer.md
-├── skills/                # 所有 Claude Code Skills (31 个)
-│   │
-│   ├── # ── 任务规划 ──
-│   ├── plan-init/             # 需求分析 + 任务分解（三档自适应）
-│   ├── plan-write/            # 计划写入 features.json
-│   ├── plan-next/             # TDD 循环执行任务
-│   │
-│   ├── # ── 后端 ──
-│   ├── backend-team/          # 后端团队编排（多 Agent）
-│   ├── backend-single/        # 后端精简编排（跨会话）
-│   ├── backend-test/          # 后端测试验证
-│   │
-│   ├── # ── 前端 ──
-│   ├── frontend-team/         # 前端团队编排（多 Agent）
-│   ├── frontend-single/       # 前端精简编排（跨会话）
-│   ├── frontend-test/         # 前端测试验证
-│   ├── frontend-design/       # 前端界面设计
-│   ├── ui-ux-pro-max/         # UI/UX 设计智能
-│   │
-│   ├── # ── 全栈 ──
-│   ├── fullstack-team/        # 全栈团队编排（多 Agent）
-│   ├── fullstack-single/      # 全栈精简编排（跨会话）
-│   │
-│   ├── # ── 新项目 ──
-│   ├── framework-team/        # 新项目脚手架编排
-│   ├── mcp-builder/           # MCP Server 创建指南
-│   │
-│   ├── # ── 代码质量 ──
-│   ├── code-review/           # 代码审查
-│   ├── code-fixer/            # 代码规范修复
-│   ├── code-simplifier/       # 代码简化优化
-│   ├── unit-test/             # 单元测试生成
-│   │
-│   ├── # ── Git 工具 ──
-│   ├── git-quick/             # 快捷 pull/commit/push
-│   ├── git-worktree/          # Git worktree 管理
-│   │
-│   ├── # ── 持续学习 ──
-│   ├── learn/                 # 手动提取可复用模式
-│   ├── instinct/              # 自动观察 + 原子级学习
-│   │
-│   ├── # ── 工具与管理 ──
-│   ├── add_or_update_skill/   # Skill 多平台同步
-│   ├── setup-permissions/     # 权限白名单配置
-│   ├── claude-md-manager/     # CLAUDE.md 管理
-│   ├── skill-creator/         # 创建新 Skill
-│   ├── find-skills/           # 发现和安装 Skill
-│   ├── markitdown/            # 文件转 Markdown
-│   ├── notebooklm-skill/      # 查询 NotebookLM
-│   └── planning-with-files/   # 文件化规划
-├── common/                # 共享参考文档
-│   ├── spock-test-guide.md
-│   ├── go_test_spock.md
-│   ├── workTeam.md
-│   └── zshrc.md
-├── CLAUDE.md
-├── LICENSE
-└── README.md
+├── skills/                # 核心技能合集 (包含 30+ 细分功能)
+│   ├── plan-*/            # 任务规划系列 (init, write, next)
+│   ├── backend-*/         # 后端专精编排与测试
+│   ├── frontend-*/        # 前端专精编排与测试
+│   ├── fullstack-*/       # 全栈全链路编排
+│   ├── framework-team/    # 从零搭建脚手架
+│   ├── code-*/            # 代码质量审查与修复 (review, simplifier)
+│   ├── git-*/             # 版本控制快捷工具
+│   └── ...                # 工具类 (markitdown, notebooklm 等)
+├── common/                # 共享参考规范与基准文档
+├── CLAUDE.md              # AI Messy 自身的演进规则与记忆
+├── LICENSE                # MIT 协议
+└── README.md              # 本文档
 ```
 
 ---
 
-## 设计原则
+## 🎯 设计原则
 
-1. **资深开发视角** — 考虑复用性、扩展性、健壮性
-2. **精准执行** — 只改该改的，不碰不该碰的
-3. **TDD 优先** — 测试驱动开发，先 RED 后 GREEN
-4. **上下文恢复** — 日志设计支持新会话快速恢复
-5. **Token 高效** — 统一日志文件，结构化标签保证可检索
+1. **资深开发视角**：恪守 KISS 原则，考虑代码的复用性、扩展性和健壮性，拒绝过度设计。
+2. **第一性原理**：以客观事实（配置文件、现有代码）为最高准则，精准执行，不碰无关代码。
+3. **TDD 优先**：严格践行测试驱动开发，先 RED 编写测试，后 GREEN 补齐实现。
+4. **上下文无缝恢复**：高度结构化的日志与状态设计，支持跨会话时状态的快速热重载。
 
 ---
 
-## 许可证
+## 📄 许可证
 
-[MIT](LICENSE)
+[MIT License](LICENSE)
