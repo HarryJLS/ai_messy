@@ -1,83 +1,44 @@
-# category、domain、implementationGuide、apiContracts 兼容性说明
+# 字段与 plan-write / plan-next 的兼容性说明
 
-## category 字段
+本文件只负责说明 **plan-init 产出的字段，下游 skill（plan-write / plan-next）如何处理**。字段的 schema 定义和填写规则见 [task-schema.md](task-schema.md)。
 
-所有合法的 `category` 值：
+## 处理规则总览
 
-| category | 说明 |
-|----------|------|
-| core | 核心功能 |
-| ui | 界面相关 |
-| feature | 新功能 |
-| optimization | 性能/逻辑优化 |
-| bugfix | Bug 修复 |
-| refactor | 代码重构 |
-| middleware | 中间件/工具 |
+| 字段 | plan-write 处理 | plan-next 处理 |
+|------|----------------|----------------|
+| `id` | 原样写入 features.json | 按此字段定位任务 |
+| `domain` | 原样保留 | 用于按 domain 过滤（fullstack-team/single） |
+| `app` / `appPath` | 检测到不同 appPath 则启用多应用模式，按 app 分组写入多份 features.json，生成 app-registry.json | 路由：任务含 appPath 时 cd 到该目录，读写 `{appPath}/.plan/` |
+| `dependsOn` | 原样保留；跨应用依赖（`app:id`）用于生成 app-registry.json 的 buildOrder | 执行前检查依赖任务是否 `passes: true`，未完成则阻塞 |
+| `complexity` | 原样保留 | trivial 跳过探索与清理；large 加影响分析与回滚检查 |
+| `category` | 原样保留 | 不影响流程 |
+| `description` / `steps` / `acceptance` / `boundary` / `test` | 原样保留 | 作为执行指南参考 |
+| `implementationGuide` | 原样保留 | PLAN 阶段读取 targetFiles/approach/referenceCode/dataFlow |
+| `apiContracts` | 原样保留 | 按契约实现/调用接口 |
+| `references` / `dataSamples` | 原样保留 | PLAN 阶段必须查阅，用户提供的是**硬约束** |
+| `passes` | 初始写入 `false` | 完成后设为 `true`；失败加 `skipped: true` + `skipReason` |
 
-plan-write 和 plan-next 会原样保留所有 category 值。
+## 多应用模式额外产物
 
-## domain 字段
+| 文件 | 创建者 | 用途 |
+|------|--------|------|
+| `{appPath}/.plan/features.json` | plan-write | 每个 app 一份，只含该 app 的任务 |
+| `{appPath}/.plan/dev-YYYY-MM-DD.log` | plan-write | 每个 app 一份开发日志 |
+| `.plan/app-registry.json` | plan-write | 应用索引 + buildOrder（按 dependsOn 推断的编译顺序） |
 
-标识任务属于 `backend` 还是 `frontend`。
+## 手动删除字段的影响
 
-- 纯后端/纯前端项目可省略
-- 全栈项目必须标注
-- plan-write 会原样保留此字段到 .plan/features.json
-- plan-next 和 fullstack-team/fullstack-single 根据 domain 分轮执行（先 backend 再 frontend）
+- `implementationGuide` 被删除 → plan-next 仍可运行，但失去实现指引，可能走弯路
+- `apiContracts` 被删除 → 涉及前后端对接时接口格式不明确，可能出现契约不一致
+- `references` / `dataSamples` 被删除 → 丢失用户硬约束，可能做出偏离意图的实现
+- 其他字段被删除 → plan-write 仍可写入，plan-next 按默认流程执行
 
-## app 字段
+## 测试用例字段（test-cases.json）
 
-标识任务所属的应用/服务名（如 `order-service`、`user-service`、`admin-web`）。
+plan-init 可选产出 `## Test Cases` 章节（JSON），plan-write 将其提取写入 `.plan/test-cases.json`。
 
-- 单应用项目可省略
-- 多应用/微服务项目必须标注
-- 配合 `appPath` 字段指定项目路径（相对路径或绝对路径）
-- plan-write 会原样保留此字段到 .plan/features.json
-- backend-single/frontend-single 支持按 app 过滤执行，自动 cd 到 appPath 目录
-
-## dependsOn 字段说明
-
-`dependsOn` 用于声明任务间的执行依赖关系，plan-next 会在执行前检查依赖任务是否已完成。
-
-**格式**：
-- 同应用内依赖：纯 ID，如 `["1", "2"]`
-- 跨应用依赖：`app:id` 格式，如 `["share-api:1"]`
-- 混合使用：`["1", "share-api:3"]`
-
-**智能设置原则——只设编译级依赖**：
-
-dependsOn 是硬阻塞，设错会导致不必要的串行等待。核心判断标准是：**任务 B 的代码是否 import/引用了任务 A 新增的类、方法或接口定义**。
-
-| 依赖类型 | 是否设 dependsOn | 说明 |
-|---------|-----------------|------|
-| 编译依赖（import 对方新增的类/接口） | ✅ 设 | 不完成则无法编译 |
-| 运行时依赖（HTTP/RPC/MQ 调用） | ❌ 不设 | 用 apiContracts 约定契约，可并行开发 |
-| 跨 domain 依赖（前端 vs 后端） | ❌ 不设 | 不同技术栈，通过 apiContracts 对接 |
-| share/common 包提供新类 → 业务服务引用 | ✅ 设 | 典型编译依赖 |
-| 同 app 内无调用关系的两个任务 | ❌ 不设 | 无交集，可并行 |
-
-**典型模式**：
-```
-share 包（公共接口/DTO）  →  编译依赖  →  业务服务 A、B
-业务服务 A  ←  HTTP 调用（运行时）  ←  业务服务 B  ← 无 dependsOn
-后端任务  ←  apiContracts 约定  ←  前端任务  ← 无 dependsOn
-```
-
-## implementationGuide 字段说明
-
-`implementationGuide` 是深度模式的增强字段，为执行者提供精确的实现指引。
-- plan-write 会原样保留此字段到 .plan/features.json
-- plan-next 执行时可参考此字段中的 targetFiles、approach 等信息加速理解
-- 如果用户手动删除此字段，不影响 plan-write / plan-next 的核心流程
-
-## apiContracts 字段说明
-
-`apiContracts` 用于记录任务涉及的接口契约，是接口对接的硬依赖——缺失会导致开发时接口格式不明确。
-
-**生成条件**（满足任一即需要）：
-1. **全栈项目**：后端任务新增/修改接口且前端任务会调用 → 后端任务必须包含 apiContracts
-2. **纯前端项目**：前端任务涉及接口对接（调用后端 API）→ 该前端任务必须包含 apiContracts，记录要对接的接口规格
-3. **纯后端项目**且无前端消费方时，无需此字段
-
-- plan-write 会原样保留此字段到 .plan/features.json
-- plan-next 执行时按契约实现/调用接口
+- `serviceConfig.framework: "auto"` → backend-test 执行时自动检测框架并填充 startCommand/port/healthCheck
+- `testSuites[].sequential: true` → 按顺序执行，支持上下文传递
+- `tests[].saveAs` → JSONPath 语法提取响应值（如 `$.orderId`）保存为变量
+- `tests[].dependsOn` → 引用同套件内测试 ID，前置失败则跳过
+- `{{变量名}}` → 在 path/headers/body 中引用 variables 或 saveAs 的值
