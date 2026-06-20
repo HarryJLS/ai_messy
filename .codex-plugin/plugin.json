@@ -7,7 +7,7 @@
     "url": "https://github.com/HarryJLS"
   },
   "homepage": "https://github.com/HarryJLS/ai_messy",
-  "repository": "https://github.com/HarryJLS/ai_messy#master",
+  "repository": "https://github.com/HarryJLS/ai_messy",
   "license": "MIT",
   "keywords": ["skills", "codex", "claude-code", "tdd", "agent-workflow"],
   "skills": "./skills/",
