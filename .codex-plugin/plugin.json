@@ -1,0 +1,27 @@
+{
+  "name": "ai_messy",
+  "version": "20260620.0",
+  "description": "AI Agent 工作流和开发指南合集 - 包含 TDD 开发流程、代码审查、团队编排等技能",
+  "author": {
+    "name": "HarryJLS",
+    "url": "https://github.com/HarryJLS"
+  },
+  "homepage": "https://github.com/HarryJLS/ai_messy",
+  "repository": "https://github.com/HarryJLS/ai_messy#master",
+  "license": "MIT",
+  "keywords": ["skills", "codex", "claude-code", "tdd", "agent-workflow"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AI Messy",
+    "shortDescription": "生产级 AI Agent 工作流与开发规范技能合集（中文）",
+    "longDescription": "AI Messy 提供了一套完整的结构化开发工作流，集成了基于 TDD 的任务管理、多 Agent 团队编排、代码审查与质量保障工具，致力于帮助开发者在 AI 辅助下实现高信噪比、高质量的渐进式交付。支持 Claude Code 和 Codex。",
+    "developerName": "HarryJLS",
+    "category": "Coding",
+    "capabilities": ["Interactive", "Read", "Write", "Bash"],
+    "defaultPrompt": [
+      "帮我使用 AI Messy 技能包处理当前项目。",
+      "帮我查看可用技能并推荐下一步。"
+    ],
+    "websiteURL": "https://github.com/HarryJLS/ai_messy"
+  }
+}

@@ -1,5 +1,7 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "ai_messy",
+  "description": "AI Agent 工作流和开发指南合集 - 包含 TDD 开发流程、代码审查、团队编排等技能",
   "owner": {
     "name": "HarryJLS",
     "url": "https://github.com/HarryJLS"
@@ -8,8 +10,10 @@
     {
       "name": "ai_messy",
       "source": "./",
-      "description": "AI Agent 工作流和开发指南合集 - 包含 TDD 开发流程、代码审查、团队编排等 Claude Code 技能",
-      "version": "1.0.0"
+      "description": "AI Agent 工作流和开发指南合集 - 包含 TDD 开发流程、代码审查、团队编排等技能",
+      "version": "20260620.1",
+      "category": "productivity",
+      "keywords": ["skills", "automation", "tdd", "code-review"]
     }
   ]
 }

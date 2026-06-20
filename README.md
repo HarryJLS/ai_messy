@@ -1,18 +1,22 @@
 # 🤖 AI Messy
 
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blue?style=flat-square)](https://docs.anthropic.com/en/docs/claude-code)
+[![Codex Plugin](https://img.shields.io/badge/Codex-Plugin-green?style=flat-square)](https://github.com/openai/codex)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-> **为 Claude Code 打造的生产级 AI Agent 工作流与开发规范技能合集（中文）**
+> **同时支持 Claude Code 和 Codex 的生产级 AI Agent 工作流与开发规范技能合集（中文）**
 
 AI Messy 提供了一套完整的结构化开发工作流，集成了基于 TDD 的任务管理、多 Agent 团队编排、代码审查与质量保障工具，致力于帮助开发者在 AI 辅助下实现高信噪比、高质量的渐进式交付。
 
 ## 🚀 前置条件
 
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI 已安装并可用
-- 已通过 `claude` 命令进入 Claude Code 交互界面
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI 或 [Codex](https://github.com/openai/codex) CLI 已安装并可用
+- Claude Code：通过 `claude` 命令进入交互界面
+- Codex：通过 `codex` 命令进入交互界面
 
 ## 📦 安装
+
+### Claude Code
 
 ```bash
 # 1. 添加 marketplace
@@ -20,6 +24,19 @@ AI Messy 提供了一套完整的结构化开发工作流，集成了基于 TDD 
 
 # 2. 安装插件
 /plugin install ai_messy@ai_messy
+```
+
+### Codex
+
+```bash
+# 1. 添加 marketplace
+codex plugin marketplace add https://github.com/HarryJLS/ai_messy --ref master
+
+# 2. 查看可用插件
+codex plugin list --available
+
+# 3. 安装插件
+codex plugin add ai_messy@ai_messy
 ```
 
 安装完成后，所有 `/skill-name` 命令即可在任意项目中使用。
@@ -177,15 +194,22 @@ graph LR
 
 ```text
 ai_messy/
-├── .claude-plugin/        # Plugin 清单与配置
+├── .claude-plugin/        # Claude Code 插件清单与配置
 │   ├── plugin.json
 │   └── marketplace.json
-├── agents/                # 项目级 Agent Prompt 定义
+├── .codex-plugin/          # Codex 插件清单
+│   └── plugin.json
+├── .agents/                # Codex marketplace 配置
+│   └── plugins/
+│       └── marketplace.json
+├── agents/                 # 项目级 Agent Prompt 定义
 │   ├── build-error-resolver.md
 │   ├── code-architect.md
 │   ├── code-reviewer.md
 │   └── security-reviewer.md
-├── skills/                # 核心技能合集 (包含 30+ 细分功能)
+├── scripts/                # 自动化脚本
+│   └── bump-plugin-version.sh
+├── skills/                 # 核心技能合集 (包含 30+ 细分功能)
 │   ├── plan-*/            # 任务规划系列 (init, write, next)
 │   ├── backend-*/         # 后端专精编排与测试
 │   ├── frontend-*/        # 前端专精编排与测试
@@ -193,11 +217,12 @@ ai_messy/
 │   ├── framework-team/    # 从零搭建脚手架
 │   ├── code-*/            # 代码质量审查与修复 (review, simplifier)
 │   ├── git-*/             # 版本控制快捷工具
-│   └── ...                # 工具类 (markitdown, notebooklm 等)
-├── common/                # 共享参考规范与基准文档
-├── CLAUDE.md              # AI Messy 自身的演进规则与记忆
-├── LICENSE                # MIT 协议
-└── README.md              # 本文档
+│   └── ...                # 工具类 (markitdown, ui-ux-pro-max 等)
+├── CLAUDE.md               # Claude Code 注入上下文
+├── AGENTS.md               # Codex 注入上下文
+├── package.json            # 双 runtime 插件声明
+├── LICENSE                 # MIT 协议
+└── README.md               # 本文档
 ```
 
 ---

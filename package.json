@@ -1,0 +1,29 @@
+{
+  "name": "ai_messy",
+  "version": "20260620.0",
+  "description": "AI Agent 工作流和开发指南合集 - 支持 Claude Code 和 Codex",
+  "repository": "https://github.com/HarryJLS/ai_messy",
+  "author": "HarryJLS",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "codex",
+    "skills",
+    "tdd",
+    "agent-workflow",
+    "code-review",
+    "chinese"
+  ],
+  "scripts": {
+    "install-skills": "node install.mjs"
+  },
+  "claudeCode": {
+    "plugin": true,
+    "skillsDir": "./skills",
+    "commandsDir": "./commands"
+  },
+  "codex": {
+    "plugin": true,
+    "skillsDir": "./skills"
+  }
+}
