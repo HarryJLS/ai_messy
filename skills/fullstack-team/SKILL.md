@@ -79,8 +79,8 @@ Lead 亲自主导后端方案预研 + 前端设计系统生成、任务分解和
 | 文件状态 | 跳入阶段 |
 |----------|----------|
 | 无 `.plan/task.md`、无 `.plan/features.json` | 阶段 1（完整流程） |
-| 有 `.plan/task.md`、无计划文件（`~/.claude/plans/*.md`）、无 `.plan/features.json` | 阶段 2（plan-init 标准模式 + plan-write） |
-| 有 `.plan/task.md`、有计划文件、无 `.plan/features.json` | 阶段 2b（仅 plan-write） |
+| 有 `.plan/task.md`（无 JSON 任务列表）、无 `.plan/features.json` | 阶段 2（plan-init 标准模式 + plan-write） |
+| 有 `.plan/task.md`（含 JSON 任务列表）、无 `.plan/features.json` | 阶段 2b（仅 plan-write） |
 | 有 `.plan/features.json`、有 backend 未完成任务 | 阶段 3a（后端开发） |
 | 有 `.plan/features.json`、backend 全完成、有 frontend 未完成任务 | 阶段 3c（前端开发） |
 | 有 `.plan/features.json`、所有 `passes: true`、dev log 中无 `[Verification-Done]` 标记 | 阶段 3.5（全量验证） |
@@ -115,7 +115,7 @@ Lead 亲自主导后端方案预研 + 前端设计系统生成、任务分解和
    - 将参考项目的关键文件路径写入 .plan/task.md 任务的 references 字段
    - 在任务描述中说明与参考项目的差异点
 4. skill 内的所有门控由 lead 直接与用户交互完成
-5. 确认 `.plan/task.md` 已生成，确认计划文件已生成（`~/.claude/plans/*.md`）
+5. 确认 `.plan/task.md` 已生成，含完整 `## 任务列表` JSON
 
 **1c. 前端设计系统生成（集成 ui-ux-pro-max + frontend-design）**
 

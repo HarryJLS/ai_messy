@@ -54,8 +54,8 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
 | 文件状态 | 跳入阶段 |
 |----------|----------|
 | 无 `.plan/task.md`、无 `.plan/features.json` | 阶段 1（完整流程） |
-| 有 `.plan/task.md`、无计划文件（`~/.claude/plans/*.md`）、无 `.plan/features.json` | 阶段 2（plan-init 标准模式 + plan-write） |
-| 有 `.plan/task.md`、有计划文件、无 `.plan/features.json` | 阶段 2b（仅 plan-write） |
+| 有 `.plan/task.md`（无 JSON 任务列表）、无 `.plan/features.json` | 阶段 2（plan-init 标准模式 + plan-write） |
+| 有 `.plan/task.md`（含 JSON 任务列表）、无 `.plan/features.json` | 阶段 2b（仅 plan-write） |
 | 有 `.plan/features.json`、有未完成任务 | 阶段 3（跳过初始化） |
 | 有 `.plan/features.json`、所有 `passes: true`、dev log 中无 `[Verification-Done]` 标记 | 阶段 3.5（全量验证） |
 | 有 `.plan/features.json`、所有 `passes: true`、dev log 中有 `[Verification-Done]` 标记、无 `[Polisher-Done]` 标记 | 阶段 4（仅优化） |
@@ -89,7 +89,7 @@ Lead 亲自主导方案预研、项目初始化和计划写入，再通过 Agent
    - 将参考项目的关键文件路径写入 .plan/task.md 任务的 references 字段
    - 在任务描述中说明与参考项目的差异点
 4. skill 内的所有门控（需求确认、代码探索确认、技术决策）由 lead 直接与用户交互完成
-5. 确认 `.plan/task.md` 已生成，确认计划文件已生成（`~/.claude/plans/*.md`）
+5. 确认 `.plan/task.md` 已生成，含完整 `## 任务列表` JSON
 6. 从 .plan/task.md 提取关键信息，生成 `.plan/pr-description.md`：
 
 ```markdown

@@ -57,7 +57,7 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
 | 文件状态 | 跳入阶段 |
 |----------|----------|
 | 无 `.plan/task.md`、无 `.plan/features.json` | 阶段 1（完整流程） |
-| 有 `.plan/task.md`、无计划文件（`~/.claude/plans/*.md`）、无 `.plan/features.json` | 阶段 2（plan-init 标准模式 + plan-write） |
+| 有 `.plan/task.md`、无 `.plan/features.json` | 阶段 2（plan-init 标准模式 + plan-write） |
 | 有 `.plan/task.md`、有计划文件、无 `.plan/features.json` | 阶段 2b（仅 plan-write） |
 | 有 `.plan/features.json`、有未完成任务 | 阶段 3（跳过初始化） |
 | 有 `.plan/features.json`、所有 `passes: true`、dev log 中无 `[Verification-Done]` 标记 | 阶段 3.5（全量验证） |
@@ -74,7 +74,7 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
 
 **这是与 backend-team 唯一的本质区别。** 无代码可探索，从需求出发设计架构并生成 .plan/task.md。
 
-**lead 操作（在 EnterPlanMode 中完成）：**
+**lead 操作：**
 
 1. **确定技术栈**：根据项目类型和用户偏好，确定：
    - 语言 + 框架版本
@@ -132,7 +132,7 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
 {涉及的模块/文件类型，粗粒度}
 ```
 
-5. ExitPlanMode → 用户审批 → 写入 .plan/task.md 和 .plan/pr-description.md
+5. 输出方案摘要请用户审批 → 用户确认后写入 .plan/task.md 和 .plan/pr-description.md
 6. 确认两个文件已生成 → 进入阶段 1.5
 
 ---
@@ -185,13 +185,13 @@ Lead 亲自主导需求收集、架构设计和计划写入，再通过 Agent Te
 
 **2a. 任务分解（plan-init 标准模式）**
 
-跳过条件：已存在计划文件（`~/.claude/plans/*.md`）时跳过，直接进入 2b。
+跳过条件：`.plan/task.md` 中已含完整 `## 任务列表` JSON 时跳过，直接进入 2b。
 
 1. 调用 `Skill("plan-init")` 执行任务分解和审批（plan-init 检测到 .plan/task.md 已存在，自动进入标准模式）
 2. skill 内的门控处理：
    - 核心目标确认：基于阶段 1 已确认的方案，直接确认
    - 技术决策：基于阶段 1 已确认的决策，直接确认
-3. 确认计划文件已生成（`~/.claude/plans/*.md`）
+3. 确认 `.plan/task.md` 含完整 `## 任务列表` JSON
 
 **2b. 计划写入（plan-write）**
 

@@ -78,7 +78,7 @@ description: 精简版前端开发编排，顺序执行四个核心 skill（plan
 
 ### 阶段 1: 计划写入
 
-**前置检查**：确认 `~/.claude/plans/*.md` 存在（由 `/plan-init` 生成）。若不存在，提示用户先运行 `/plan-init`，然后停止。
+**前置检查**：确认 `.plan/task.md` 存在且含完整任务列表（由 `/plan-init` 生成）。若不存在，提示用户先运行 `/plan-init`，然后停止。
 
 1. 调用 `Skill("plan-write")` 将计划写入项目文件
 2. 确认 `.plan/features.json` 和 `.plan/dev-*.log` 存在 → 进入阶段 2
