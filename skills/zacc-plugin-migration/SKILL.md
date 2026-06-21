@@ -1,7 +1,7 @@
 ---
 name: zacc-plugin-migration
 description: "将现有 Skill 项目改造成同时支持 Claude Code 和 Codex 的插件式安装项目，生成 .claude-plugin、.codex-plugin、marketplace、package.json 与 README 配置；安装命令默认不指定远程分支。"
-version: "1.2.0"
+version: "1.3.0"
 tags: ["plugin", "claude-code", "codex", "migration"]
 ---
 
@@ -51,8 +51,6 @@ tags: ["plugin", "claude-code", "codex", "migration"]
 │   └── marketplace.json
 ├── skills/
 │   └── <skill-name>/SKILL.md
-├── scripts/
-│   └── bump-plugin-version.sh
 ├── AGENTS.md
 ├── CLAUDE.md
 ├── package.json
@@ -64,7 +62,8 @@ tags: ["plugin", "claude-code", "codex", "migration"]
 
 - `commands/`：Claude Code slash command 模板。
 - `agents/`：Claude Code agent 文件。
-- `.claude/settings.json`：Hook 等 Claude Code 配置。
+- `.claude/settings.json`：Claude Code 配置（权限白名单等）。
+- `.git/hooks/pre-commit`：版本号自动 bump 钩子（机器本地、不纳入版本库，见第 9 节）。
 - `docs/`：项目说明文档。
 
 ### 3. Codex 插件配置
@@ -266,136 +265,128 @@ test -f .agents/plugins/marketplace.json
 
 检查 README 和 manifest 中是否仍有 `#master`、`#dev`、`--ref master`、`--ref dev`、`origin/dev` 等分支后缀残留。安装命令和 `repository` 字段默认不带任何分支后缀，让工具使用仓库默认分支。
 
-### 9. 版本号自动 Bump Hook
+### 9. 版本号自动 Bump Hook（git pre-commit）
 
-每次 `git push` 时自动升级 `.claude-plugin/plugin.json` 和 `.codex-plugin/plugin.json` 的版本号，并把版本变更提交进去，使推送出去的内容带上最新版本号。开发过程中正常 `git commit` 不会改动版本号，只有真正推送（发布）时才 bump，避免开发期间版本号频繁抖动。
+每次 `git commit` 时，用本地 git 钩子 `.git/hooks/pre-commit` 自动把 `.claude-plugin/plugin.json` 和 `.codex-plugin/plugin.json` 的版本号**同步**升级到同一个新版本，并 `git add` 让版本变更随本次提交一起进入。
+
+> **为什么用原生 git 钩子而不是 `.claude/settings.local.json` 的 PreToolUse 钩子：** 原生钩子对**任意** `git commit` 都生效（含终端直接提交、Codex 提交），不依赖具体客户端是否加载 settings。代价是它位于 `.git/hooks/` 下、不随仓库分发，每个 clone 需各自设置一次——这正是下面 9.5「快速设置提示词」要解决的。
 
 #### 9.1 版本号格式
 
-**格式：`YYYYMMDD-N`**
+**格式：`YYYYMMDD.N`**
 
-- 日期部分：当天日期（如 `20260620`）
-- 尾数：当天首次推送为 `-0`，每次推送累计 +1
-- 跨天自动重置为 `-0`
+- 日期部分：当天日期（如 `20260621`）
+- 尾数：当天首次提交为 `.1`，每次提交累计 +1
+- 跨天自动重置为 `新日期.1`
 
 示例：
-- 当天首次推送：`1.0.0` → `20260620-0`
-- 当天第二次推送：`20260620-0` → `20260620-1`
-- 次日推送：`20260620-1` → `20260621-0`
+- 新的一天首次提交：`1.0.0` → `20260621.1`
+- 当天再次提交：`20260621.1` → `20260621.2`
+- 次日提交：`20260621.2` → `20260622.1`
 
-**兼容旧格式：** 如果现有版本使用旧格式 `YYYYMMDD.N`（从 `.1` 开始），脚本自动识别并迁移到新格式。
+**两插件同步：** 取两个插件中"今天"日期的最大尾数 +1，统一写入两个文件，避免二者长期不同步。读取时兼容旧的短横线格式 `YYYYMMDD-N`，写入统一为点号格式。
 
-#### 9.2 Bump 脚本
+#### 9.2 pre-commit 钩子脚本
 
-创建 `scripts/bump-plugin-version.sh`：
+写入 `.git/hooks/pre-commit`：
 
 ```bash
-#!/bin/bash
-# 在 git push 时自动 bump 插件版本号并提交版本变更
-# 支持 .claude-plugin/plugin.json 和 .codex-plugin/plugin.json
-# 版本格式：YYYYMMDD-N，当天首次推送为 -0，每次累计 +1，跨天重置为 -0
-# 兼容从旧格式 YYYYMMDD.N 自动迁移到 YYYYMMDD-N
+#!/usr/bin/env bash
+set -euo pipefail
 
-INPUT=$(cat)
-# 仅在 git push 时触发
-[[ "$INPUT" == *'"git push'* ]] || exit 0
+# git commit 时同步 bump 两个插件版本号，二者保持同一版本
+# 格式：YYYYMMDD.N（当天首次 .1，每次 +1，跨天重置为 .1）
+# 读取兼容旧的短横线格式 YYYYMMDD-N；写入统一为点号格式
+# 单插件项目（只有其中一个 plugin.json）同样适用
 
-TODAY=$(date +%Y%m%d)
-PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
-CHANGED=()
-NEW=""
+CLAUDE_JSON=".claude-plugin/plugin.json"
+CODEX_JSON=".codex-plugin/plugin.json"
 
-bump_plugin() {
-  local PLUGIN="$1"
-  [ -f "$PLUGIN" ] || return 0
+# 提取 version 字段的完整值
+raw_ver() {
+  grep -oE '"version"[[:space:]]*:[[:space:]]*"[^"]+"' "$1" 2>/dev/null \
+    | head -1 | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/' || true
+}
 
-  # 提取当前版本号
-  CUR=$(grep -oE '"version":[[:space:]]*"[^"]+"' "$PLUGIN" | grep -oE '[0-9]{8}[-.][0-9]+')
+today=$(date +%Y%m%d)
 
-  # 版本号为空（非 YYYYMMDD 格式）则跳过
-  [ -n "$CUR" ] || return 0
-
-  # 提取日期部分和尾数
-  local DATE_PART="${CUR:0:8}"
-  local NUM_PART="${CUR:9}"
-
-  # 同天则尾数 +1，跨天重置为 0
-  if [ "$DATE_PART" = "$TODAY" ]; then
-    NEW="$TODAY-$((NUM_PART + 1))"
-  else
-    NEW="$TODAY-0"
+# 取两个插件中「今天」日期的最大尾数；都不是今天（或非日期格式）则按 0，使新版本回到 .1
+maxnum=0
+have=0
+for f in "$CLAUDE_JSON" "$CODEX_JSON"; do
+  [[ -f "$f" ]] || continue
+  v=$(raw_ver "$f")
+  [[ -n "$v" ]] || continue
+  have=1
+  if [[ "$v" =~ ^${today}[.-]([0-9]+)$ ]]; then
+    n="${BASH_REMATCH[1]}"
+    (( n > maxnum )) && maxnum="$n"
   fi
+done
 
-  sed -i.bak "s/\"version\": *\"$CUR\"/\"version\": \"$NEW\"/" "$PLUGIN" && rm -f "$PLUGIN.bak"
-  CHANGED+=("$PLUGIN")
-  echo "[bump] $(basename "$(dirname "$PLUGIN")"): $CUR → $NEW" >&2
+# 没有任何带 version 的 plugin.json，则不处理
+[[ "$have" -eq 1 ]] || exit 0
+
+new="${today}.$((maxnum + 1))"
+
+bump() {
+  local f="$1" cur
+  [[ -f "$f" ]] || return 0
+  cur=$(raw_ver "$f")
+  [[ -n "$cur" ]] || return 0
+  if [[ "$cur" != "$new" ]]; then
+    # 只替换 version 行的值，保留原有缩进与键顺序（不整体重写 JSON）
+    sed -i.bak -E "s/(\"version\"[[:space:]]*:[[:space:]]*\")[^\"]+(\")/\1${new}\2/" "$f" \
+      && rm -f "$f.bak"
+  fi
+  git add "$f"
 }
 
-# bump 两个插件
-bump_plugin "$PROJECT_DIR/.claude-plugin/plugin.json"
-bump_plugin "$PROJECT_DIR/.codex-plugin/plugin.json"
+bump "$CLAUDE_JSON"
+bump "$CODEX_JSON"
 
-# 有版本变更则提交，使其随本次 push 一起推送
-if [ "${#CHANGED[@]}" -gt 0 ]; then
-  git -C "$PROJECT_DIR" add "${CHANGED[@]}"
-  git -C "$PROJECT_DIR" commit -m "chore: bump plugin version to $NEW" >&2
-fi
-
-exit 0
+echo "[pre-commit] 版本号 → $new (claude + codex 同步)"
 ```
 
-#### 9.3 Hook 配置
+#### 9.3 安装钩子
 
-在 `.claude/settings.local.json` 的 `hooks` 中配置 `PreToolUse` hook，匹配 `Bash(git push:*)` 时触发：
+把 9.2 的脚本写入 `.git/hooks/pre-commit` 后，赋予可执行权限：
 
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash(git push:*)",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/scripts/bump-plugin-version.sh"
-          }
-        ]
-      }
-    ]
-  }
-}
+```bash
+chmod +x .git/hooks/pre-commit
 ```
 
-**说明：**
+`.git/hooks/` 不纳入版本库，因此该钩子是机器本地的，换机器或新 clone 时需重新执行一次安装。
 
-| 配置项 | 值 | 说明 |
-|--------|-----|------|
-| `matcher` | `Bash(git push:*)` | 仅在 `git push` 时触发，不拦截普通 commit 和其他 Bash 调用 |
-| `type` | `command` | 执行外部脚本 |
-| `command` | `$CLAUDE_PROJECT_DIR/scripts/bump-plugin-version.sh` | 脚本路径，使用环境变量保证可迁移 |
+#### 9.4 触发与注意事项
 
-**触发条件：**
+- **触发**：通过任意方式执行 `git commit`（Claude、Codex、终端都生效），无需在 `settings.local.json` 配权限。
+- **跳过**：缺少某个 `plugin.json` 时静默跳过该文件；两个都没有日期/版本字段时整体跳过、不报错。
+- **`git commit --amend`** 会再次触发钩子导致二次 bump；amend 时请加 `--no-verify`。
+- 钩子只修改 `version` 行、保留原有缩进与键顺序（sed 替换，不整体重写 JSON）。
+- 首次从非日期版本（如 `1.0.0`）提交时，会直接迁移为 `今天.1`。
 
-- 触发：`git push`（任意形式）
-- 跳过：`git commit`、`git commit --amend` 等非 push 命令（脚本只匹配 `git push`）
-- 跳过：项目中没有 `.claude-plugin/plugin.json` 或 `.codex-plugin/plugin.json`
-- 跳过：版本号不是 `YYYYMMDD` 格式
+#### 9.5 快速设置提示词
 
-**注意事项：**
+在其他项目里，把下面这段直接发给 Claude Code / Codex，即可一键设置：
 
-- Hook 在 `PreToolUse` 阶段执行，先 bump 版本并提交，再由后续的 `git push` 把这个版本提交一起推送。
-- 脚本只会 `git add` 改动的 plugin.json 文件并单独提交，不会带上工作区里其他未提交改动。
-- 如果只有一个插件（没有 `.codex-plugin/`），脚本静默跳过不存在的文件。
-- 若两个插件版本号当天提交次数不同步，脚本会按各自当前版本独立计算，commit message 使用最后一个 bump 的版本号。
-- Hook 配置中 `permissions.allow` 需包含脚本路径以绕过权限提示。
+```text
+为当前仓库设置「提交时自动同步插件版本号」的 git 钩子：
 
-#### 9.4 权限配置
+1. 创建并覆盖 .git/hooks/pre-commit（机器本地、不纳入版本库），并 chmod +x 使其可执行。
+2. 行为：每次 git commit 时，把 .claude-plugin/plugin.json 和 .codex-plugin/plugin.json
+   的 version 字段同步 bump 到「同一个」新版本号，并 git add 让它们随本次提交一起进入。
+3. 版本号格式 YYYYMMDD.N：取两个插件中「今天」日期的最大尾数 +1；若都不是今天则为「今天.1」
+   （跨天重置）。读取时兼容旧的 YYYYMMDD-N 短横线格式，写入统一为点号格式；
+   首次从非日期版本（如 1.0.0）提交时直接迁移为「今天.1」。
+4. 只用 sed 替换 version 那一行，保留文件原有缩进与键顺序，不要整体重写 JSON。
+5. 缺少其中某个 plugin.json 时静默跳过该文件；都没有 version 字段时整体跳过、不报错。
+6. 完成后实际模拟一次提交验证：确认两个 plugin.json 的版本号被同步 bump 到一致。
 
-在 `.claude/settings.local.json` 的 `permissions.allow` 中添加：
-
-```json
-"Bash(./scripts/bump-plugin-version.sh)"
+之后用 git commit --amend 时记得加 --no-verify，避免二次 bump。
 ```
+
+> 若当前项目已安装本插件，也可以只说一句："用 zacc-plugin-migration 第 9 节的方案，为当前项目设置提交时自动同步双插件版本号的 git 钩子。"
 
 ## 输出摘要
 

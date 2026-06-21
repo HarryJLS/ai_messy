@@ -1,6 +1,6 @@
 {
   "name": "ai_messy",
-  "version": "20260621.1",
+  "version": "20260621.2",
   "description": "AI Agent 工作流和开发指南合集 - 包含 TDD 开发流程、代码审查、团队编排等技能",
   "author": {
     "name": "HarryJLS",

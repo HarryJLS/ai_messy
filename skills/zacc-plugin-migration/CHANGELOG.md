@@ -2,6 +2,20 @@
 
 ## 更新日志
 
+### v1.3.0（2026-06-21）
+
+#### 变更
+
+- **版本号 Bump Hook 方案改为原生 git `pre-commit` 钩子**（第 9 节整节重写）：
+  - 触发时机从 push 改回 `git commit`，机制从 `.claude/settings.local.json` PreToolUse 钩子 + `scripts/bump-plugin-version.sh` 改为 `.git/hooks/pre-commit`，对终端/Codex/Claude 的任意提交都生效。
+  - 版本格式从短横线 `YYYYMMDD-N` 改回点号 `YYYYMMDD.N`（与常见 CLAUDE.md Commit 规范一致），读取仍兼容短横线格式。
+  - 钩子同步 bump 两个插件到同一版本（取两者今日最大尾数 +1），修复双插件版本号长期不同步问题；支持从非日期版本（如 `1.0.0`）首次迁移。
+- 标准目录移除 `scripts/bump-plugin-version.sh`，可选目录新增 `.git/hooks/pre-commit` 说明。
+
+#### 新增
+
+- **第 9.5 节「快速设置提示词」**：提供一段可直接复制给 Claude Code / Codex 的提示词，在其他项目一键设置版本号自动 bump 钩子。
+
 ### v1.2.0（2026-06-20）
 
 #### 变更
