@@ -1,7 +1,7 @@
 ---
 name: zacc-plugin-migration
-description: "将现有 Skill 项目改造成同时支持 Claude Code 和 Codex 的插件式安装项目，生成 .claude-plugin、.codex-plugin、marketplace、package.json 与 README 配置；默认远程分支使用 master。"
-version: "1.1.0"
+description: "将现有 Skill 项目改造成同时支持 Claude Code 和 Codex 的插件式安装项目，生成 .claude-plugin、.codex-plugin、marketplace、package.json 与 README 配置；安装命令默认不指定远程分支。"
+version: "1.2.0"
 tags: ["plugin", "claude-code", "codex", "migration"]
 ---
 
@@ -13,7 +13,7 @@ tags: ["plugin", "claude-code", "codex", "migration"]
 
 ## 硬性规则
 
-- 默认远程分支一律使用 `master`，包括 README 安装命令、manifest repository、marketplace add 示例和发布说明。
+- 安装命令默认不指定远程分支，让工具使用仓库默认分支；manifest `repository` 字段只写纯 git URL，不加 `#branch` 后缀。README 安装命令、marketplace add 示例和发布说明同样不写分支。
 - 插件名使用仓库名的 kebab-case，必须和 `.codex-plugin/plugin.json` 的 `name`、`.claude-plugin/plugin.json` 的 `name`、marketplace 插件条目 `name` 保持一致。
 - Skill 入口统一使用 `skills/<skill-name>/SKILL.md`。保留整个 skill 目录，包含 `references/`、`scripts/`、`templates/`、`agents/` 等支持文件。
 - 不要把 Claude Code 专属字段直接放进 Codex manifest，也不要把 Codex `interface` 块放进 Claude Code manifest。
@@ -78,11 +78,11 @@ tags: ["plugin", "claude-code", "codex", "migration"]
   "description": "<一句话说明插件能力>",
   "author": {
     "name": "<team-or-author>",
-    "email": "<email>",
+    "email": "moxiao726@gmail.com",
     "url": "<https-url>"
   },
   "homepage": "<https-repo-or-doc-url>",
-  "repository": "<https-git-url>#master",
+  "repository": "<https-git-url>",
   "license": "MIT",
   "keywords": ["skills", "codex", "claude-code"],
   "skills": "./skills/",
@@ -140,12 +140,12 @@ Codex 注意事项：
 README 中的 Codex 安装命令默认写成：
 
 ```bash
-codex plugin marketplace add <https-git-url> --ref master
+codex plugin marketplace add <https-git-url>
 codex plugin list --available
 codex plugin add <plugin-name>@<plugin-name>
 ```
 
-Codex UI 说明默认写成：在 `/plugins` 中添加 marketplace，地址为 `<https-git-url>#master`。
+Codex UI 说明默认写成：在 `/plugins` 中添加 marketplace，地址为 `<https-git-url>`（不带分支后缀）。
 
 ### 5. Claude Code 插件配置
 
@@ -158,7 +158,7 @@ Codex UI 说明默认写成：在 `/plugins` 中添加 marketplace，地址为 `
   "description": "<一句话说明插件能力>",
   "author": {
     "name": "<team-or-author>",
-    "email": "<email>"
+    "email": "moxiao726@gmail.com"
   },
   "homepage": "<https-repo-or-doc-url>",
   "repository": "<https-git-url>",
@@ -189,7 +189,7 @@ Claude Code 注意事项：
   "description": "<一句话说明插件能力>",
   "owner": {
     "name": "<team-or-author>",
-    "email": "<email>",
+    "email": "moxiao726@gmail.com",
     "url": "<https-owner-url>"
   },
   "plugins": [
@@ -208,7 +208,7 @@ Claude Code 注意事项：
 README 中的 Claude Code 安装命令默认写成：
 
 ```bash
-/plugin marketplace add <https-git-url>#master
+/plugin marketplace add <https-git-url>
 /plugin install <plugin-name>@<plugin-name>
 ```
 
@@ -240,7 +240,7 @@ README 中的 Claude Code 安装命令默认写成：
 README 至少补充：
 
 - 项目一句话说明：明确支持 Claude Code / Codex。
-- 插件安装方式：Claude Code 和 Codex 两套命令，均使用 `master`。
+- 插件安装方式：Claude Code 和 Codex 两套命令，均不指定远程分支，使用仓库默认分支。
 - 更新方式：Codex 可写 `codex plugin marketplace upgrade`，Claude Code 按现有 marketplace 更新机制说明。
 - 验证方式：
   - Claude Code：重启后输入 `/` 查看 skills。
@@ -264,24 +264,24 @@ test -f .claude-plugin/plugin.json
 test -f .agents/plugins/marketplace.json
 ```
 
-检查 README 和 manifest 中是否仍有 `#dev`、`--ref dev`、`origin/dev` 等默认分支残留。插件安装说明中默认分支必须为 `master`。
+检查 README 和 manifest 中是否仍有 `#master`、`#dev`、`--ref master`、`--ref dev`、`origin/dev` 等分支后缀残留。安装命令和 `repository` 字段默认不带任何分支后缀，让工具使用仓库默认分支。
 
 ### 9. 版本号自动 Bump Hook
 
-每次 `git commit` 时自动升级 `.claude-plugin/plugin.json` 和 `.codex-plugin/plugin.json` 的版本号。
+每次 `git push` 时自动升级 `.claude-plugin/plugin.json` 和 `.codex-plugin/plugin.json` 的版本号，并把版本变更提交进去，使推送出去的内容带上最新版本号。开发过程中正常 `git commit` 不会改动版本号，只有真正推送（发布）时才 bump，避免开发期间版本号频繁抖动。
 
 #### 9.1 版本号格式
 
 **格式：`YYYYMMDD-N`**
 
 - 日期部分：当天日期（如 `20260620`）
-- 尾数：当天首次提交为 `-0`，每次提交累计 +1
+- 尾数：当天首次推送为 `-0`，每次推送累计 +1
 - 跨天自动重置为 `-0`
 
 示例：
-- 当天首次提交：`1.0.0` → `20260620-0`
-- 当天第二次提交：`20260620-0` → `20260620-1`
-- 次日提交：`20260620-1` → `20260621-0`
+- 当天首次推送：`1.0.0` → `20260620-0`
+- 当天第二次推送：`20260620-0` → `20260620-1`
+- 次日推送：`20260620-1` → `20260621-0`
 
 **兼容旧格式：** 如果现有版本使用旧格式 `YYYYMMDD.N`（从 `.1` 开始），脚本自动识别并迁移到新格式。
 
@@ -291,15 +291,19 @@ test -f .agents/plugins/marketplace.json
 
 ```bash
 #!/bin/bash
-# 在 git commit 时自动 bump 插件版本号
+# 在 git push 时自动 bump 插件版本号并提交版本变更
 # 支持 .claude-plugin/plugin.json 和 .codex-plugin/plugin.json
-# 版本格式：YYYYMMDD-N，当天首次提交为 -0，每次累计 +1，跨天重置为 -0
+# 版本格式：YYYYMMDD-N，当天首次推送为 -0，每次累计 +1，跨天重置为 -0
 # 兼容从旧格式 YYYYMMDD.N 自动迁移到 YYYYMMDD-N
 
 INPUT=$(cat)
-[[ "$INPUT" == *'"git commit'* && "$INPUT" != *'--amend'* ]] || exit 0
+# 仅在 git push 时触发
+[[ "$INPUT" == *'"git push'* ]] || exit 0
 
 TODAY=$(date +%Y%m%d)
+PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
+CHANGED=()
+NEW=""
 
 bump_plugin() {
   local PLUGIN="$1"
@@ -308,7 +312,7 @@ bump_plugin() {
   # 提取当前版本号
   CUR=$(grep -oE '"version":[[:space:]]*"[^"]+"' "$PLUGIN" | grep -oE '[0-9]{8}[-.][0-9]+')
 
-  # 版本号为空则跳过
+  # 版本号为空（非 YYYYMMDD 格式）则跳过
   [ -n "$CUR" ] || return 0
 
   # 提取日期部分和尾数
@@ -323,28 +327,33 @@ bump_plugin() {
   fi
 
   sed -i.bak "s/\"version\": *\"$CUR\"/\"version\": \"$NEW\"/" "$PLUGIN" && rm -f "$PLUGIN.bak"
+  CHANGED+=("$PLUGIN")
   echo "[bump] $(basename "$(dirname "$PLUGIN")"): $CUR → $NEW" >&2
 }
-
-PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
 
 # bump 两个插件
 bump_plugin "$PROJECT_DIR/.claude-plugin/plugin.json"
 bump_plugin "$PROJECT_DIR/.codex-plugin/plugin.json"
+
+# 有版本变更则提交，使其随本次 push 一起推送
+if [ "${#CHANGED[@]}" -gt 0 ]; then
+  git -C "$PROJECT_DIR" add "${CHANGED[@]}"
+  git -C "$PROJECT_DIR" commit -m "chore: bump plugin version to $NEW" >&2
+fi
 
 exit 0
 ```
 
 #### 9.3 Hook 配置
 
-在 `.claude/settings.local.json` 的 `hooks` 中配置 `PreToolUse` hook，匹配 `Bash(git commit:*)` 时触发：
+在 `.claude/settings.local.json` 的 `hooks` 中配置 `PreToolUse` hook，匹配 `Bash(git push:*)` 时触发：
 
 ```json
 {
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash(git commit:*)",
+        "matcher": "Bash(git push:*)",
         "hooks": [
           {
             "type": "command",
@@ -361,23 +370,24 @@ exit 0
 
 | 配置项 | 值 | 说明 |
 |--------|-----|------|
-| `matcher` | `Bash(git commit:*)` | 仅在 `git commit` 时触发，不再拦截所有 Bash 调用 |
+| `matcher` | `Bash(git push:*)` | 仅在 `git push` 时触发，不拦截普通 commit 和其他 Bash 调用 |
 | `type` | `command` | 执行外部脚本 |
 | `command` | `$CLAUDE_PROJECT_DIR/scripts/bump-plugin-version.sh` | 脚本路径，使用环境变量保证可迁移 |
 
 **触发条件：**
 
-- 触发：`git commit -m "msg"`（非 --amend）
-- 跳过：`git commit --amend`、`git commit --no-verify`（脚本内部不判断 --no-verify，但 amend 会跳过）
+- 触发：`git push`（任意形式）
+- 跳过：`git commit`、`git commit --amend` 等非 push 命令（脚本只匹配 `git push`）
 - 跳过：项目中没有 `.claude-plugin/plugin.json` 或 `.codex-plugin/plugin.json`
 - 跳过：版本号不是 `YYYYMMDD` 格式
 
 **注意事项：**
 
-- 脚本修改 plugin.json 后，需在 commit 前完成（hook 在 `PreToolUse` 阶段执行，在 `git commit` 实际执行之前）
-- `git commit --amend` 不会触发 bump，避免反复修改已存在的 commit
-- 如果只有一个插件（没有 `.codex-plugin/`），脚本静默跳过不存在的文件
-- Hook 配置中 `permissions.allow` 需包含 `Bash(./scripts/bump-plugin-version.sh)` 以绕过权限提示
+- Hook 在 `PreToolUse` 阶段执行，先 bump 版本并提交，再由后续的 `git push` 把这个版本提交一起推送。
+- 脚本只会 `git add` 改动的 plugin.json 文件并单独提交，不会带上工作区里其他未提交改动。
+- 如果只有一个插件（没有 `.codex-plugin/`），脚本静默跳过不存在的文件。
+- 若两个插件版本号当天提交次数不同步，脚本会按各自当前版本独立计算，commit message 使用最后一个 bump 的版本号。
+- Hook 配置中 `permissions.allow` 需包含脚本路径以绕过权限提示。
 
 #### 9.4 权限配置
 

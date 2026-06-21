@@ -2,6 +2,18 @@
 
 ## 更新日志
 
+### v1.2.0（2026-06-20）
+
+#### 变更
+
+- **取消默认 `master` 分支约束**：安装命令、manifest `repository` 字段、marketplace 示例统一不再写分支后缀（`#master`、`--ref master`），改为让工具使用仓库默认分支。
+- **版本号 Bump Hook 触发时机从 commit 改为 push**：
+  - 脚本匹配条件从 `git commit` 改为 `git push`，开发期间普通提交不再改动版本号，仅在推送（发布）时 bump。
+  - 脚本 bump 后会 `git add` + `git commit` 版本变更，使其随本次 push 一起推送。
+  - Hook matcher 从 `Bash(git commit:*)` 改为 `Bash(git push:*)`。
+- 版本格式说明中"提交"措辞同步更新为"推送"。
+- manifest 模板的 `author.email` / `owner.email` 默认值从占位符 `<email>` 改为 `moxiao726@gmail.com`。
+
 ### v1.1.0（2026-06-20）
 
 #### 新增
